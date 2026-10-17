@@ -13,8 +13,8 @@ namespace fair_transmog::game::layered_menu {
 bool Install(const std::filesystem::path& config_path);
 
 // Called before each native model refresh of the local player, on whatever thread runs it: clears
-// saved layered slots holding ordinary armor the character no longer owns (sold, melted, or set by
-// a loadout). Does nothing when not installed or when the equipment box cannot be read.
+// saved layered slots holding ordinary armor the character no longer owns (sold, or set by a
+// loadout). Does nothing when not installed or when the equipment box cannot be read.
 void OnRefresh(std::uint8_t* player) noexcept;
 
 }  // namespace fair_transmog::game::layered_menu

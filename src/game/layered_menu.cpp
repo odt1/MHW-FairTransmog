@@ -65,6 +65,7 @@ constexpr std::ptrdiff_t kUserLock = 0x8;
 constexpr std::ptrdiff_t kSavedLayered = 0xE7434;
 constexpr std::ptrdiff_t kPlayerActorArmor = 0x13754;
 // Equipment box: inline entries sharing one vtable; armor has type 0, a slot and a per-slot key.
+constexpr std::uintptr_t kBoxEntryVtableRva = 0x30B3050;
 constexpr std::ptrdiff_t kBox = 0x41068;
 constexpr std::size_t kBoxEntries = 4260;
 constexpr std::size_t kBoxEntrySize = 0x98;
@@ -202,18 +203,19 @@ bool OwnsAny(const Ownership& owned, const std::uint8_t* record) noexcept {
     return false;
 }
 
-// Returns the number of armor pieces found; zero also when the box could not be read.
-std::size_t ScanBox(Ownership& owned) {
+// Returns the number of armor pieces found, or nothing when the box is unreadable or not loaded
+// (its entries do not carry the equipment vtable yet).
+std::optional<std::size_t> ScanBox(Ownership& owned) {
     for (auto& slot : owned) {
         slot.reset();
     }
     auto* user = SelectedUser();
     if (user == nullptr) {
-        return 0;
+        return std::nullopt;
     }
     std::vector<std::uint8_t> box(kBoxEntries * kBoxEntrySize);
     if (!mem::Read(user + kBox, box.data(), box.size())) {
-        return 0;
+        return std::nullopt;
     }
     std::size_t pieces = 0;
     const auto read = [&](std::size_t entry, std::ptrdiff_t offset, auto value) {
@@ -221,6 +223,9 @@ std::size_t ScanBox(Ownership& owned) {
         return value;
     };
     const auto vtable = read(0, 0, std::uintptr_t{});
+    if (vtable != reinterpret_cast<std::uintptr_t>(g_exe) + kBoxEntryVtableRva) {
+        return std::nullopt;
+    }
     for (std::size_t i = 0; i != kBoxEntries && read(i, 0, std::uintptr_t{}) == vtable; ++i) {
         const auto slot = read(i, kEntrySlot, std::int32_t{});
         const auto key = read(i, kEntryKey, std::int32_t{});
@@ -246,7 +251,7 @@ std::size_t ScanBox(Ownership& owned) {
 
 void CollectFairSets() {
     Ownership owned;
-    const std::size_t pieces = ScanBox(owned);
+    const std::size_t pieces = ScanBox(owned).value_or(0);
     AcquireSRWLockExclusive(&g_owned_lock);
     g_owned = owned;
     ReleaseSRWLockExclusive(&g_owned_lock);
@@ -419,8 +424,9 @@ void OnRefresh(std::uint8_t* player) noexcept {
     try {
         Ownership owned;
         auto* user = SelectedUser();
-        // An unreadable or not yet loaded box must never be mistaken for "owns nothing".
-        if (user == nullptr || ScanBox(owned) == 0) {
+        // An unreadable or not yet loaded box must never be mistaken for "owns nothing"; a loaded box
+        // without any armor really does own nothing.
+        if (user == nullptr || !ScanBox(owned)) {
             return;
         }
         auto* saved = reinterpret_cast<std::int32_t*>(user + kSavedLayered);
