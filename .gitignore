@@ -1,0 +1,18 @@
+# Build output and packages
+build/
+dist/
+.vs/
+
+# Local game data and third-party reference projects (not distributable)
+assets/
+MHW-Editor/
+MHW-Costume-Armor/
+MHWISaveEditor/
+re/inputs/
+re/backups/
+re/deployment-backups/
+re/observations/baseline.png
+*.bndb
+
+# Local tool settings
+.claude/

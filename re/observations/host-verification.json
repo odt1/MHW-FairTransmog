@@ -1,0 +1,133 @@
+{
+  "created_utc": "2026-10-16T08:07:14.6905298Z",
+  "status": "host-only-pass",
+  "toolchain": "MSVC 19.51 x64, C++20, static CRT",
+  "asset_fixture": "assets/chunk/common/equip/armor.am_dat",
+  "parser_tests": 15,
+  "deployment_fixture_groups": 8,
+  "deployment": "permission-denied-before-execution",
+  "game_launched": false,
+  "game_memory_writes": false,
+  "builds": [
+    {
+      "preset": "release",
+      "dll": "build\\release\\MHW-FairTransmog.dll",
+      "dll_bytes": 1513984,
+      "dll_sha256": "36FBA4887C3B1D92C250B8E845D7E82A83393486596B099375CC512F324B35A6",
+      "ctest_report": "re\\observations\\ctest-release.xml",
+      "tests": 5,
+      "failures": 0
+    },
+    {
+      "preset": "diagnostic",
+      "dll": "build\\diagnostic\\MHW-FairTransmog.dll",
+      "dll_bytes": 1513984,
+      "dll_sha256": "6D9E1C286F9FB8D68172F789855592375C4DF8288A6353EAD536245980D4C461",
+      "ctest_report": "re\\observations\\ctest-diagnostic.xml",
+      "tests": 5,
+      "failures": 0
+    }
+  ],
+  "sources": [
+    {
+      "path": "CMakeLists.txt",
+      "bytes": 2942,
+      "sha256": "1B204FAF0FACCA24575AD64411AB479880AE3C6ADAE736668A8F28D4B00A11B7"
+    },
+    {
+      "path": "CMakePresets.json",
+      "bytes": 1201,
+      "sha256": "AB43D77EB47B5D44CDD72489F8F923FDAE06962B0F01947684CE1DBF06FE071D"
+    },
+    {
+      "path": "src\\dllmain.cpp",
+      "bytes": 601,
+      "sha256": "9DDEC7A3FEA68CE089F05C711DF3566AA5197DD2AE3E5B132EC0BFB46CBD6531"
+    },
+    {
+      "path": "src\\game\\appearance.cpp",
+      "bytes": 3248,
+      "sha256": "BFC465C1C3E2D2C3A53A94D56D15BF878694C5C7A8A799780CCACE59D648C297"
+    },
+    {
+      "path": "src\\game\\appearance.h",
+      "bytes": 217,
+      "sha256": "F3943CC5EA1A4F23F5F581FB49A080E3EC4435A40A5C6D79439D2ADC58079046"
+    },
+    {
+      "path": "src\\runtime\\log.cpp",
+      "bytes": 1218,
+      "sha256": "BE291081A626D67E06F38FCB376460E5060E2F0BE0C521D12CA4CF2F1B903C12"
+    },
+    {
+      "path": "src\\runtime\\log.h",
+      "bytes": 407,
+      "sha256": "11A89F54979F67BA7A91E8EF88DB3A5D64A41A6D8E9B58C2BD5A221DC880ABDF"
+    },
+    {
+      "path": "src\\runtime\\memory.cpp",
+      "bytes": 4231,
+      "sha256": "268E9FA7FAF6217D6188D2DA8F0C98FE46F2B9C0B6B9090ECC3A4C09BFD74826"
+    },
+    {
+      "path": "src\\runtime\\memory.h",
+      "bytes": 899,
+      "sha256": "FDC6D2BDCDCC19FBFCA8D5151DB0F8F1CBB9937388382584B0A3C9E838DF92C6"
+    },
+    {
+      "path": "src\\runtime\\profile.cpp",
+      "bytes": 5716,
+      "sha256": "F9DD60786EC1FBB437AF4C41AB3F802AD140518843DF98E7C8FAD60AC2D17032"
+    },
+    {
+      "path": "src\\runtime\\profile.h",
+      "bytes": 1214,
+      "sha256": "2A4CEF7E7CEE507D0658B59129AEEA292FD3569AABA02F179D2116C2EDABF404"
+    },
+    {
+      "path": "tests\\test_bootstrap.cpp",
+      "bytes": 10817,
+      "sha256": "6CC34739AAF3E502B188C294457FA5A9146F6ACB2E70829B8DC29E8DB87AE778"
+    },
+    {
+      "path": "tests\\test_deploy.ps1",
+      "bytes": 10339,
+      "sha256": "AAEE7621A84EFB5D23FF75A412271E2A10725ED2B3F31691D7B378BEF8112F42"
+    },
+    {
+      "path": "tests\\test_inspect_armor.py",
+      "bytes": 10952,
+      "sha256": "9ED8D9CA4C36EA6D6ECB3F7940700F69C13B49B7EA55CC31712C59E7990E0642"
+    },
+    {
+      "path": "tests\\test_memory.cpp",
+      "bytes": 6273,
+      "sha256": "940E2E0AD8930FC670DAFAA365A3496D777AECDE15319A892B12D317B1C5BA22"
+    },
+    {
+      "path": "tests\\test_profile.cpp",
+      "bytes": 10272,
+      "sha256": "6C974A3B841448915F07348CA9997CF0D2B84FCFBD0F823E6CFBE8FA62629483"
+    },
+    {
+      "path": "tools\\backup-save.ps1",
+      "bytes": 3292,
+      "sha256": "EEBFB6BA860BFAD933D3D7257A3E1B0B6D1B502DEEAFC7BDA2BB32B47157BAFE"
+    },
+    {
+      "path": "tools\\build.ps1",
+      "bytes": 626,
+      "sha256": "5B9DF097C0686A22B46EAF46D56221B31304A2C20094BDE2521BAE73BBFA90C6"
+    },
+    {
+      "path": "tools\\deploy.ps1",
+      "bytes": 2855,
+      "sha256": "D57E7FA80EE5EF7F4741680C1E147C96068D4D521BD2578A31A3C3705D0AC9D3"
+    },
+    {
+      "path": "tools\\inspect_armor.py",
+      "bytes": 8766,
+      "sha256": "B9373F1C224F1F59299B46C794BC166E0C2E0B2994B8BEAFDAF3E0F771449DC8"
+    }
+  ]
+}

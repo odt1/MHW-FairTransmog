@@ -1,0 +1,559 @@
+{
+  "schema": "mhw-static-layered-menu-evidence/1",
+  "identity": {
+    "status": "observed",
+    "binary": "C:/Projects/MHW Mods/re/inputs/mhw-current/MonsterHunterWorld.exe.unpacked.exe",
+    "binary_sha256": "FE50D8468881FF8CB094C5F9A599A5D6B2965950331A22EE34148C612651C521",
+    "database": "C:/Projects/MHW Mods/re/inputs/mhw-current/MonsterHunterWorld.exe.unpacked.exe.bndb",
+    "original_filename_metadata": "C:/Projects/MHW DLSS/re/MonsterHunterWorld.exe.unpacked.exe",
+    "raw_view_type": "Raw",
+    "raw_view_length": 84014728,
+    "raw_view_sha256": "FE50D8468881FF8CB094C5F9A599A5D6B2965950331A22EE34148C612651C521",
+    "image_base": "0x140000000",
+    "architecture": "x86_64",
+    "verified_utc": "2026-10-16T07:23:01.866012+00:00",
+    "method": "Probe independently SHA-256-hashes the isolated file and the existing GUI view's entire Raw parent; checks the exact isolated database path, image base and architecture before each query. Original filename metadata still names the source DLSS file and does not override the verified database identity."
+  },
+  "scope": "Static read-only GUI Binary Ninja queries through bnctl. No game launch/attachment, CE, native calls, hooks, process writes, save access, driver/hypervisor, bypass, or BN name/type/comment changes. Existing GUI session is not saved, retargeted or closed. Only this JSON and the new probe are owned.",
+  "collection": {
+    "probe": "C:/Projects/MHW Mods/re/probes/recover_layered_menu.py",
+    "method": "Probe emits bounded JSON to stdout; caller preserves load-bearing raw instruction/HLIL excerpts here through explicit file tools. Excerpts are not claimed as whole-function listings unless specified. All addresses are static preferred VAs, not runtime addresses. Every function below inherits the identity SHA-256 above.",
+    "permission_note": "Initial combined inspection-and-filesystem-checkpoint script invocation was denied. Probe was reduced to read-only stdout output with no filesystem writes; that safer operation succeeded. No permission settings were changed.",
+    "prototype_policy": "Any BN-generated prototype is an analysis hypothesis. No native callable signature is verified by this artifact.",
+    "reference_policy": "BN database xrefs are bounded analysis evidence, not a proof of exhaustive reference coverage. Unsuccessful queries leave claims unknown.",
+    "last_gui_identity_revalidation_utc": "2026-10-16T07:48:48.829754+00:00",
+    "final_gui_status": "Same PID 45336, same isolated bndb, IdleState, 295765 functions; not saved, closed or retargeted.",
+    "validation": {
+      "status": "observed",
+      "date": "2026-10-16",
+      "probe_python_syntax": "valid via ast.parse; final anchors preset also executed successfully in GUI BN",
+      "artifact_json": "valid",
+      "functions": 35,
+      "claims": 13,
+      "instruction_excerpts_independently_matched_to_binary": 100,
+      "qwords_independently_matched_to_binary": 106,
+      "method": "Separate Python -I -B read-only validation of JSON/RVAs/evidence links; recomputed whole binary SHA-256; parsed PE section table and compared every recorded instruction byte sequence and numeric qword to raw file bytes. No script output files or pycache created.",
+      "native_signatures_all_unknown": true
+    }
+  },
+  "evidence_gate": "Static leads only; no runtime adapter or appearance/menu feature is ready or enabled. Call signatures, game-thread/context identity, canonical appearance state, ownership bounds, preview/commit semantics and safe refresh require independent validation.",
+  "claims": [
+    {
+      "status": "observed",
+      "claim": "Preserved uGUIEquipOuter registration and DTI accessor are revalidated in the exact binary. Registration passes the DTI address, name, parent-like address and 0x4cf0 to sub_14216ed60, then stores 0x142fa77c8 at the DTI's first qword. The accessor returns the DTI address.",
+      "function_rvas": ["0x37c30", "0x525bf0"],
+      "evidence": ["functions.0x140037c30", "functions.0x140525bf0"]
+    },
+    {
+      "status": "inferred",
+      "claim": "0x142fa77c8 is the initialized DTI object's method table, distinct from the recovered GUI instance vtable.",
+      "evidence": ["functions.0x140037c30", "regions.0x142fa77c8", "functions.0x140523950"]
+    },
+    {
+      "status": "observed",
+      "claim": "DTI table +0x8 contains sub_140523680. That factory requests 0x4cf0 bytes with 0x10 alignment-like argument and tail-calls sub_140523950 on nonzero result. sub_140523950 calls sub_141fb3d10, stores 0x142fa77f8 at the object's first qword, and registers btnlist_tab and btngrdlink_list. The new table +0x20 contains the validated DTI accessor.",
+      "function_rvas": ["0x523680", "0x523950", "0x525bf0"],
+      "evidence": ["regions.0x142fa77c8", "functions.0x140523680", "functions.0x140523950", "regions.0x142fa77f8"]
+    },
+    {
+      "status": "inferred",
+      "claim": "sub_140523950 is uGUIEquipOuter's instance constructor and 0x142fa77f8 its primary instance vtable; 0x4cf0 is its allocation size. This does not establish live object identity or any menu callback ABI.",
+      "evidence": ["functions.0x140523680", "functions.0x140523950", "regions.0x142fa77f8"]
+    },
+    {
+      "status": "observed",
+      "claim": "Instance vtable +0x238 points to the ui/equip/equip_appearance resource getter, +0x250 to widget binding sub_1405256b0, +0x2d0 to enumeration sub_140525370, and +0x2d8 to a resetting helper sub_1405252f0. The pointer run ends before btnlist_tab text at +0x2e8.",
+      "function_rvas": ["0x525c00", "0x5256b0", "0x525370", "0x5252f0"],
+      "evidence": ["regions.0x142fa7978", "functions.0x140525c00", "functions.0x1405256b0", "functions.0x140525370"]
+    },
+    {
+      "status": "observed",
+      "claim": "Enumeration visits indices 0..0x2ef via sub_1416721d0. It retains only groups whose first nonzero native piece byte+0x13 is 2 or 3, applies other category/ID guards and availability-like predicates, deduplicates group+4 values, and appends uint32 IDs to GUI+0x2990+category*0xbc8 with a qword count at GUI+0x3550+category*0xbc8. IDs 0xc2/0xc3 take a five-part availability loop; the other branch passes part argument 6. These are catalog/menu bounds, not proven inventory bounds.",
+      "function_rvas": ["0x525370", "0x16721d0", "0x1672230", "0x1672810", "0x311500"],
+      "evidence": ["functions.0x140525370", "functions.0x141672230", "functions.0x141672810"]
+    },
+    {
+      "status": "observed",
+      "claim": "The shared availability-like predicate has a large ID switch and a fallback that maps ID via sub_1416b6e60 then tests a bit in context+0x102428. It is also consulted by row flags and activation paths.",
+      "function_rvas": ["0x134ce60", "0x524970", "0x524230", "0x5264a0"],
+      "evidence": ["functions.0x14134ce60", "functions.0x140524970", "functions.0x140524230", "functions.0x1405264a0"]
+    },
+    {
+      "status": "unknown",
+      "claim": "The availability predicate is not established as current-ownership validation. Its bitset and special-case conditions must not be replaced with a global unlock bypass. Native record offsets are not established as the packed armor.am_dat schema."
+    },
+    {
+      "status": "observed",
+      "claim": "Widget initialization stores GUI context at list+0x120 and callbacks at list+0x128=0x140524230, +0x130=0x140504e40, +0x210=0x140524970 and +0x138=0x140524a70. The activation-like +0x128 callback has direct one-part and five-part writes and dialog-bearing branches; it is not merely a renderer.",
+      "function_rvas": ["0x5256b0", "0xb87200", "0xb871d0", "0xb871c0", "0xb762b0", "0xb87220", "0x524230"],
+      "evidence": ["functions.0x1405256b0", "functions.0x140524230"]
+    },
+    {
+      "status": "observed",
+      "claim": "Activation synchronizes two different representations: the indexed-context accessor result+0xe7434 gets group+4, whereas the active-object getter result+0x13754 gets the native piece's uint16 at +0x1e. 0xffffffff clears fields. It then calls sub_142041700 with the player-like object, 1 and 0, followed by widget refreshes. A display accessor resolves context+0xe7434 through sub_141672160 and a part pointer at +0x18.",
+      "function_rvas": ["0x524230", "0x1355810", "0x1b8dbb0", "0x1b42010", "0x2041700"],
+      "evidence": ["functions.0x140524230", "functions.0x141355810", "functions.0x141b8dbb0", "functions.0x141b42010", "functions.0x142041700"]
+    },
+    {
+      "status": "inferred",
+      "claim": "sub_142041700 is a native appearance/equipment refresh candidate, while sub_1405264a0 and sub_140526000 refresh list/current-equipment widgets. Observed call-site constants do not establish a safe API or accepted real-armor ID domain.",
+      "evidence": ["functions.0x142041700", "functions.0x1405264a0", "functions.0x140526000", "functions.0x140524230"]
+    },
+    {
+      "status": "observed",
+      "claim": "Activation dialog callable tables lead to sub_140523e60 (single-part replacement after five-field reset), sub_140524000 (five-part filtered application) and sub_140524170 -> sub_140523a50 (five-slot toggle/reset). The first two return before modifications unless *third_argument==0; the last handler returns unless its result argument is zero.",
+      "function_rvas": ["0x523e60", "0x524000", "0x524170", "0x523a50"],
+      "evidence": ["regions.0x142fa7be8", "functions.0x140523e60", "functions.0x140524000", "functions.0x140524170", "functions.0x140523a50"]
+    },
+    {
+      "status": "inferred",
+      "claim": "Those result==0 gates are confirmation-like semantics. Preview, cancel restoration, final persistence, event-code meanings and loadout integration remain unknown; the separate 0/1 event branches in sub_140524a70 enqueue other actions and must not be mislabeled as proven apply/cancel callbacks.",
+      "evidence": ["functions.0x140524a70", "regions.0x142fa7c78", "functions.0x140523e60", "functions.0x140524000"]
+    }
+  ],
+  "functions": {
+    "0x1405252f0": {
+      "status": "observed", "rva": "0x5252f0", "name": "sub_1405252f0", "total_bytes": 114,
+      "verified_call_signature": "unknown", "instance_vtable_slot": "0x2d8",
+      "hlil": [["0x140525304", "sub_140b741f0(*(arg1 + 0x28f8))"], ["0x140525310", "sub_140b741f0(*(arg1 + 0x28f0))"], ["0x14052531e", "*(arg1 + 0x3550) = 0"], ["0x14052532c", "*(arg1 + 0x4118) = 0"], ["0x140525338", "*(arg1 + 0x4ce0) = 0"], ["0x140525346", "__builtin_memset(arg1 + 0x2920, 0, rcx_2 << 3)"], ["0x14052535d", "return sub_141adb5d0(data_1451c4640, arg1) __tailcall"]]
+    },
+    "0x141672160": {
+      "status": "observed", "rva": "0x1672160", "name": "sub_141672160", "total_bytes": 21,
+      "verified_call_signature": "unknown",
+      "hlil": [["0x141672170", "return sub_1402798a0(data_145011f00 + 0x127e8, arg1) __tailcall"]]
+    },
+    "0x140524f10": {
+      "status": "observed", "rva": "0x524f10", "name": "sub_140524f10", "total_bytes": 58,
+      "verified_call_signature": "unknown",
+      "hlil": [["0x140524f1f", "sub_140525cc0(arg1, arg3, 0)"], ["0x140524f2d", "sub_140b76190(*(arg1 + 0x28f0), 0)"], ["0x140524f45", "return sub_140b65a70(*(arg1 + 0x28f0) + 0x298) __tailcall"]]
+    },
+    "0x140524ec0": {
+      "status": "observed", "rva": "0x524ec0", "name": "sub_140524ec0", "total_bytes": 73,
+      "verified_call_signature": "unknown",
+      "hlil": [["0x140524ed0", "if (*(arg1 + 0x4ce8) == 0)"], ["0x140524eea", "    rdx.b = *(arg1 + 0x3550) u<= 0"], ["0x140524ed0", "else"], ["0x140524ed9", "    rdx = *(*(arg1 + 0x28f8) + 0x274)"], ["0x140524eed", "sub_140525cc0(arg1, rdx, entry_r8)"], ["0x140524f04", "return sub_140b76190(rcx, *(rcx + 0x274)) __tailcall"]]
+    },
+    "0x140523f80": {
+      "status": "observed", "rva": "0x523f80", "name": "sub_140523f80", "total_bytes": 101,
+      "verified_call_signature": "unknown", "callable_table": "0x142fa7ca8", "callable_slot": "0x10",
+      "hlil": [["0x140523f9a", "(*(*rcx + 0x1d0))(rcx, rcx[0x399], r8)"], ["0x140523fa4", "*(rax_1 + 0x2298) |= 8"], ["0x140523fbc", "sub_140b76190(rcx_1, *(rcx_1 + 0x274))"], ["0x140523fd2", "sub_1405264a0(rcx_2, *(*(rcx_2 + 0x28f8) + 0x274))"], ["0x140523fe0", "return sub_140526000(*(arg1 + 8)) __tailcall"]]
+    },
+    "0x140523db0": {
+      "status": "observed", "rva": "0x523db0", "name": "sub_140523db0", "total_bytes": 170,
+      "verified_call_signature": "unknown", "callable_table": "0x142fa7d08", "callable_slot": "0x10",
+      "hlil": [["0x140523dca", "(*(*rcx + 0x1d0))(rcx, rcx[0x399], r8)"], ["0x140523dd9", "*(rax_1 + 0x2298) |= 8"], ["0x140523deb", "sub_141b463f0(data_14500eca0, 0x1e, 0xffffffff)"], ["0x140523e31", "sub_140b76190(rcx_4, *(rcx_4 + 0x274))"], ["0x140523e47", "sub_1405264a0(rcx_5, *(*(rcx_5 + 0x28f8) + 0x274))"], ["0x140523e55", "return sub_140526000(*(arg1 + 8)) __tailcall"]]
+    },
+    "0x140523ff0": {
+      "status": "observed", "rva": "0x523ff0", "name": "sub_140523ff0", "total_bytes": 16,
+      "verified_call_signature": "unknown", "callable_table": "0x142fa7c78", "callable_slot": "0x10",
+      "hlil": [["0x140523ff0", "void* rcx_1 = *arg3"], ["0x140523ff6", "if (rcx_1 == 0)"], ["0x140523fff", "    return "], ["0x140523ffa", "return sub_141040120(rcx_1, 1) __tailcall"]]
+    },
+    "0x140524180": {
+      "status": "observed", "rva": "0x524180", "name": "sub_140524180", "total_bytes": 54,
+      "verified_call_signature": "unknown", "callable_table": "0x142fa7cd8", "callable_slot": "0x10",
+      "hlil": [["0x140524186", "void* rbx = *arg3"], ["0x140524199", "int64_t result = sub_141b463f0(data_14500eca0, 0xc, 0xffffffff)"], ["0x1405241a1", "if (rbx == 0)"], ["0x1405241b5", "    return result"], ["0x1405241ab", "return sub_141e06a00(rbx) __tailcall"]]
+    },
+    "0x140523e60": {
+      "status": "observed", "rva": "0x523e60", "name": "sub_140523e60", "total_bytes": 273,
+      "verified_call_signature": "unknown", "callable_table": "0x142fa7be8", "callable_slot": "0x10",
+      "hlil": [["0x140523e6d", "if (*arg3 != 0)"], ["0x140523e6d", "    return "], ["0x140523e7d", "int64_t i_1 = 5"], ["0x140523eae", "    *(rdi_1 + rax_1 + 0xd3ce0) = 0xffffffff"], ["0x140523ec7", "    *(rdi_1 + *(arg1 + 8) - 4) = 0xffffffff"], ["0x140523ee0", "uint64_t rsi_2 = zx.q(*(arg1 + 0x18))"], ["0x140523ee4", "int32_t rbp_1 = *(*(arg1 + 0x10) + 4)"], ["0x140523efd", "*(rax_4 + (rsi_2 << 2) + 0xe7434) = rbp_1"], ["0x140523f1f", "*(*(arg1 + 8) + (r8 << 2) + 0x13754) = zx.d(*(*(*(arg1 + 0x10) + (r8 << 3) + 0x18) + 0x1e))"], ["0x140523f32", "sub_142041700(*(arg1 + 8), 1, 0)"], ["0x140523f48", "sub_1405264a0(rcx_8, *(*(rcx_8 + 0x28f8) + 0x274))"], ["0x140523f51", "sub_140526000(*(arg1 + 0x20))"]],
+      "instructions": [["0x140523e66", "41 83 38 00", "cmp dword [r8], 0x0"], ["0x140523e6d", "0f 85 f7 00 00 00", "jne 0x140523f6a"]],
+      "semantic_limit": "Result==0 gate before clearing five fields and selecting one slot. Confirmation-like action inferred; dialog result meaning not observed in UI and full preview/cancel transaction semantics unknown."
+    },
+    "0x140524000": {
+      "status": "observed", "rva": "0x524000", "name": "sub_140524000", "total_bytes": 354,
+      "verified_call_signature": "unknown", "callable_table": "0x142fa7c18", "callable_slot": "0x10",
+      "hlil": [["0x14052400d", "if (*arg3 != 0)"], ["0x14052400d", "    return "], ["0x14052401d", "int64_t i_2 = 5"], ["0x14052405d", "    *(rsi_1 + rax_1 + 0xd3ce0) = 0xffffffff"], ["0x140524076", "    *(rsi_1 + *(arg1 + 8) - 4) = 0xffffffff"], ["0x140524099", "    if (*(r14_1 + rbx_1) != 0"], ["0x140524099", "            && sub_14134ce60(sub_141b8dbb0(data_145013950), *(rbx_1 + 4), i_1) != 0)"], ["0x1405240dd", "        *(r12_1 + rax_6 + 0xd3ce0) = rbp_1"], ["0x1405240fb", "        *(r12_1 + *(arg1 + 8)) = zx.d(*(*(*(arg1 + 0x10) + r14_1) + 0x1e))"], ["0x14052410c", "while (i_1 u< 5)"], ["0x140524119", "sub_142041700(*(arg1 + 8), 1, 0)"], ["0x140524138", "sub_140526000(*(arg1 + 0x18))"]],
+      "instructions": [["0x140524006", "41 83 38 00", "cmp dword [r8], 0x0"], ["0x14052400d", "0f 85 48 01 00 00", "jne 0x14052415b"]]
+    },
+    "0x140524170": {
+      "status": "observed", "rva": "0x524170", "name": "sub_140524170", "total_bytes": 14,
+      "verified_call_signature": "unknown", "callable_table": "0x142fa7c48", "callable_slot": "0x10",
+      "hlil": [["0x140524179", "return sub_140523a50(arg1 + 8, zx.q(*arg2), *arg3) __tailcall"]]
+    },
+    "0x140523a50": {
+      "status": "observed", "rva": "0x523a50", "name": "sub_140523a50", "total_bytes": 498,
+      "verified_call_signature": "unknown",
+      "hlil": [["0x140523a53", "if (arg3 != 0)"], ["0x140523a53", "    return "], ["0x140523a9b", "if (*(sub_141b8dbb0(data_145013950) + 0xe7434) == *(arg1[1] + 4))"], ["0x140523bdd", "        *(rdi_1 + rax_11 + 0xd3ce0) = 0xffffffff"], ["0x140523bf5", "        *(rdi_1 + *arg1 - 4) = 0xffffffff"], ["0x140523c0c", "    sub_142041700(*arg1, (i_3 + 1).d, 0)"], ["0x140523acd", "    *(r15_1 + rax_2 + 0xd3ce0) = 0xffffffff"], ["0x140523ae6", "    *(r15_1 + *arg1 - 4) = 0xffffffff"], ["0x140523b09", "    if (*(r12_1 + rbx_1) != 0"], ["0x140523b09", "            && sub_14134ce60(sub_141b8dbb0(data_145013950), *(rbx_1 + 4), i_2) != 0)"], ["0x140523b4d", "        *(rdi_1 + rax_7 + 0xd3ce0) = rbp_1"], ["0x140523b69", "        *(rdi_1 + *arg1) = zx.d(*(*(r12_1 + arg1[1]) + 0x1e))"], ["0x140523b7b", "while (i_2 u< 5)"], ["0x140523b87", "sub_142041700(*arg1, 1, 0)"]],
+      "semantic_limit": "Type-3-related five-slot toggle/reset handler inferred from its caller. Real inventory full-body ownership is not established."
+    },
+    "0x1405264a0": {
+      "status": "observed", "rva": "0x5264a0", "name": "sub_1405264a0", "total_bytes": 527,
+      "verified_call_signature": "unknown",
+      "hlil": [["0x1405264ce", "int32_t r10 = *(sx.q(arg2) * 0xbc8 + arg1 + 0x3550)"], ["0x14052651a", "uint64_t rdx_2 = zx.q(rsi u/ 5)"], ["0x14052655e", "void* rdi_1 = *(arg1 + ((zx.q(rdx_2.d) + 0x524) << 3))"], ["0x140526577", "void* r13_1 = *(rdi_1 + (zx.q(rsi - (rdx_2 * 5).d) << 3) + 0x18)"], ["0x14052659f", "sub_14134ce60(sub_141b8dbb0(data_145013950), *(rdi_1 + 4), zx.d(*(r13_1 + 0xc)))"], ["0x1405265b4", "sub_140b8c3a0(&r14_1[0xd1], r13_1, 1)"], ["0x1405265c5", "sub_140b8c630(&r14_1[0xd1], rax_7 == 0)"], ["0x140526614", "sub_140b8c680(&r14_1[0xd1], rdx_7.b)"]],
+      "description": "Builds/updates native row widgets using group and five-part mapping, availability predicate, and comparison against context+0xe7434 for selected markers. Distinct from native object refresh sub_142041700."
+    },
+    "0x140526000": {
+      "status": "observed", "rva": "0x526000", "name": "sub_140526000", "total_bytes": 1171,
+      "verified_call_signature": "unknown",
+      "hlil": [["0x140526010", "void* result = *(arg1 + 0x2900)"], ["0x14052608b", "int64_t* rax_1 = sub_142340e20(rcx_1, \"msg_name\")"], ["0x1405260ab", "rdi_1 = sub_142340e20(rcx_2, \"icon_itemList\")"], ["0x140526160", "void* rax_8 = sub_141355810(sub_141b8dbb0(data_145013950), r15.d)"], ["0x14052627c", "int32_t rax_15 = sub_141354860(sub_141b8dbb0(data_145013950), r15.d)"], ["0x1405262a1", "rsi_2 = zx.q(rax_15) * 0x98 + sub_141b8dbb0(data_145013950) + 0x41068"], ["0x140526183", "sub_1418c48a0(r13_1, sub_141671eb0(r15.d, zx.d(*(rax_8 + 0x1e))))"]],
+      "semantic_limit": "Current-equipment/appearance pane display lead. Fallback record stride 0x98 and base +0x41068 are not a validated inventory iterator/count or proof of ownership."
+    },
+    "0x141355810": {
+      "status": "observed", "rva": "0x1355810", "name": "sub_141355810", "total_bytes": 44,
+      "verified_call_signature": "unknown",
+      "hlil": [["0x141355818", "int32_t rcx = *(arg1 + (rbx << 2) + 0xe7434)"], ["0x141355822", "if (rcx == 0xffffffff)"], ["0x14135583b", "    return 0"], ["0x141355833", "return *(sub_141672160(rcx) + (rbx << 3) + 0x18)"]]
+    },
+    "0x140525cc0": {
+      "status": "observed", "rva": "0x525cc0", "name": "sub_140525cc0", "total_bytes": 831,
+      "verified_call_signature": "unknown",
+      "hlil": [["0x140525cfd", "uint64_t rdx = zx.q(*(zx.q(arg2) * 0xbc8 + arg1 + 0x3550))"], ["0x140525d53", "*(*(arg1 + 0x28f0) + 0x310) = rdx.d"], ["0x140525d7d", "int64_t* rsi_1 = arg1 + 0x2920"], ["0x140525da6", "*rsi_1 = sub_141672160(*(arg1 + ((zx.q(arg2) * 0x2f2 + rax_4) << 2) + 0x2990))"], ["0x140525e18", "sub_1418c48a0(rsi_3, sub_141672180(*(*(arg1 + (zx.q(rbx_3) << 3) + 0x2920) + 4)))"], ["0x140525e75", "float zmm6_1 = sub_1405264a0(arg1, arg2)"]],
+      "description": "Category/page list materialization: resolves stored IDs into pointers at GUI+0x2920 and updates labels/rows. Display-window/count bounds are not inventory bounds."
+    },
+    "0x140524230": {
+      "status": "observed", "rva": "0x524230", "name": "sub_140524230", "total_bytes": 1850,
+      "registered_widget_slot": "btngrdlink_list+0x128", "verified_call_signature": "unknown",
+      "coverage": "HLIL root lines 0..349 were requested in two bounded queries; all returned lines inspected. Selected load-bearing excerpts below. This is an activation/application-like callback, not a mere row renderer.",
+      "hlil": [
+        ["0x14052425e", "char* rax = sub_141b42010(data_14500eca0)"],
+        ["0x14052427c", "if (sub_140b78910(*(arg1 + 0x28f0), rbx.d) != 0)"],
+        ["0x140524413", "    int32_t rax_13 = sub_140b788d0(*(arg1 + 0x28f0), rbx.d)"],
+        ["0x14052442a", "    uint64_t rdx_6 = zx.q(rax_13 u/ 5)"],
+        ["0x14052442d", "    void* rax_14 = *(arg1 + (rdx_6 << 3) + 0x2920)"],
+        ["0x140524438", "    int32_t r8_4 = rax_13 - (rdx_6 * 5).d"],
+        ["0x140524454", "        var_e8_1 = sub_141672230(rax_14)"],
+        ["0x140524475", "        if (rsi_2 != 0xffffffff && sub_141672230(sub_141672160(rsi_2)).d == 3)"],
+        ["0x1405244a0", "    if (var_e8_1 == 3)"],
+        ["0x1405244cb", "        int32_t rsi_3 = *(sub_141b8dbb0(data_145013950) + (r14_1 << 2) + 0xe7434)"],
+        ["0x1405244e9", "        *(rax_19 + (r14_1 << 2) + 0xe7434) = 0xffffffff"],
+        ["0x1405244fb", "        *(rax + (r15_4 << 2) + 0x13754) = 0xffffffff"],
+        ["0x14052450f", "        int32_t rax_20 = *(rax_14 + 4)"],
+        ["0x14052451b", "        if (rsi_3 != rax_20)"],
+        ["0x140524542", "            *(rax_21 + (zx.q(r8_4) << 2) + 0xe7434) = arg_8.d"],
+        ["0x14052455c", "            *(rax + (r15_4 << 2) + 0x13754) = zx.d(*(*(rax_14 + (r15_4 << 3) + 0x18) + 0x1e))"],
+        ["0x14052456e", "        sub_142041700(rax, 1, 0)"],
+        ["0x140524584", "        sub_1405264a0(arg1, *(*(arg1 + 0x28f8) + 0x274))"],
+        ["0x14052458c", "        return sub_140526000(arg1)"],
+        ["0x14052465a", "        var_170 = &data_142fa7be8"],
+        ["0x14052427c", "else"],
+        ["0x140524282", "    void* rdi = *(arg1 + (rbx << 3) + 0x2920)"],
+        ["0x1405242e0", "            rax_5 = sub_14134ce60(sub_141b8dbb0(data_145013950), *(rdi + 4), i_1)"],
+        ["0x14052431f", "    while (i_1 u< 5)"],
+        ["0x14052434f", "        *(rax_7 + r13_2) = 0xffffffff"],
+        ["0x14052435d", "        *(rax + r13_2 - 0xd3ce0) = 0xffffffff"],
+        ["0x1405243cf", "                *(r15_2 + rax_10) = rsi_1"],
+        ["0x1405243e6", "                *(r15_2 + rax - 0xd3ce0) = zx.d(*(*r13_3 + 0x1e))"],
+        ["0x1405243fd", "        while (i_3 u< 5)"],
+        ["0x1405246dc", "sub_142041700(rcx_39, 1, 0)"],
+        ["0x140524936", "        void* result = sub_141ae2050(data_1451c4640, &var_d8)"]
+      ],
+      "instructions": [
+        ["0x1405244d3", "e8 d8 96 66 01", "call 0x141b8dbb0"],
+        ["0x1405244df", "ff 15 1b eb 8e 02", "call qword [rel 0x142e13000]"],
+        ["0x1405244e9", "42 c7 84 b7 34 74 0e 00 ff ff ff ff", "mov dword [rdi+r14*4+0xe7434], 0xffffffff"],
+        ["0x1405244f5", "ff 15 0d eb 8e 02", "call qword [rel 0x142e13008]"],
+        ["0x1405244fb", "43 c7 84 bd 54 37 01 00 ff ff ff ff", "mov dword [r13+r15*4+0x13754], 0xffffffff"],
+        ["0x140524542", "89 94 8f 34 74 0e 00", "mov dword [rdi+rcx*4+0xe7434], edx"],
+        ["0x140524553", "4b 8b 44 f7 18", "mov rax, qword [r15+r14*8+0x18]"],
+        ["0x140524558", "0f b7 48 1e", "movzx ecx, word [rax+0x1e]"],
+        ["0x14052455c", "43 89 8c b5 54 37 01 00", "mov dword [r13+r14*4+0x13754], ecx"],
+        ["0x140524564", "45 33 c0", "xor r8d, r8d"],
+        ["0x140524567", "49 8b cd", "mov rcx, r13"],
+        ["0x14052456a", "41 8d 50 01", "lea edx, [r8+0x1]"],
+        ["0x14052456e", "e8 8d d1 b1 01", "call 0x142041700"]
+      ],
+      "semantic_limit": "Two distinct ID domains: context+0xe7434 receives group+4; player-like object+0x13754 receives uint16 from native piece+0x1e. Their mappings to packed armor.am_dat fields, real armor inventory IDs and saved/live/preview state are not established. No runtime field writes were performed."
+    },
+    "0x141b8dbb0": {
+      "status": "observed", "rva": "0x1b8dbb0", "name": "sub_141b8dbb0", "total_bytes": 22,
+      "verified_call_signature": "unknown",
+      "hlil": [["0x141b8dbc5", "return sx.q(*(arg1 + 0xa0)) * 0x26cc00 + *(arg1 + 0xa8)"]],
+      "instructions_complete": true,
+      "instructions": [["0x141b8dbb0", "48 63 81 a0 00 00 00", "movsxd rax, dword [rcx+0xa0]"], ["0x141b8dbb7", "48 69 c0 00 cc 26 00", "imul rax, rax, 0x26cc00"], ["0x141b8dbbe", "48 03 81 a8 00 00 00", "add rax, qword [rcx+0xa8]"], ["0x141b8dbc5", "c3", "retn"]],
+      "semantic_limit": "Indexed-context accessor. No established active TEST slot value, range check, readiness, save layout or live buffer lifetime."
+    },
+    "0x141b42010": {
+      "status": "observed", "rva": "0x1b42010", "name": "sub_141b42010", "total_bytes": 89,
+      "verified_call_signature": "unknown",
+      "description": "Scans 0x18 entries at 0x740 stride; requires one of two status dwords nonnegative, compares entry key at cursor-8 to arg1+0xae40, then returns pointer at cursor+8 only when nonzero and byte[pointer+0xc]&0xe is nonzero.",
+      "instructions": [["0x141b42037", "49 8b 40 f8", "mov rax, qword [r8-0x8]"], ["0x141b4203b", "48 39 81 40 ae 00 00", "cmp qword [rcx+0xae40], rax"], ["0x141b42047", "49 81 c0 40 07 00 00", "add r8, 0x740"], ["0x141b4204e", "41 83 f9 18", "cmp r9d, 0x18"], ["0x141b42057", "49 8b 40 08", "mov rax, qword [r8+0x8]"], ["0x141b42060", "f6 40 0c 0e", "test byte [rax+0xc], 0xe"]],
+      "semantic_limit": "Player-like active-object getter inferred from menu use, not independently validated local-player identity."
+    },
+    "0x142041700": {
+      "status": "observed", "rva": "0x2041700", "name": "sub_142041700", "total_bytes": 457,
+      "verified_call_signature": "unknown",
+      "hlil": [["0x142041729", "*(arg1 + 0x1261c) |= 2"], ["0x142041742", "*(arg1 + 0x12630) |= 2"], ["0x14204182e", "sub_142045d70(arg1)"], ["0x142041854", "void* rcx_13 = *(arg1 + 0x12610)"], ["0x14204185e", "if (arg3 == 0)"], ["0x142041867", "    sub_141258770(rcx_13, arg1 + 0x13690, arg2)"], ["0x14204185e", "else"], ["0x142041860", "    sub_141258710(rcx_13, arg1 + 0x13690, arg2)"], ["0x142041895", "sub_1412cf380(*(arg1 + 0x9d8), zmm1)"], ["0x14204189d", "void* result = sub_1419a5610(arg1)"]],
+      "semantic_limit": "Post-selection native apply/refresh candidate. Safe callable ABI, flag meanings, thread, ownership, complete side effects and visual success remain unknown."
+    },
+    "0x1405256b0": {
+      "status": "observed", "rva": "0x5256b0", "name": "sub_1405256b0", "total_bytes": 1337,
+      "instance_vtable_slot": "0x250", "verified_call_signature": "unknown",
+      "hlil": [
+        ["0x1405257f8", "void* rax_11 = sub_1423537a0(arg1, \"btnlist_tab\")"],
+        ["0x1405257fd", "*(arg1 + 0x28f8) = rax_11"],
+        ["0x140525818", "sub_140b87200(*(arg1 + 0x28f8), arg1)"],
+        ["0x14052582b", "sub_140b762b0(*(arg1 + 0x28f8), sub_140524f10)"],
+        ["0x14052591d", "void* rax_18 = sub_1423537a0(arg1, \"btngrdlink_list\")"],
+        ["0x140525922", "*(arg1 + 0x28f0) = rax_18"],
+        ["0x14052593a", "sub_140b87200(*(arg1 + 0x28f0), arg1)"],
+        ["0x14052594d", "sub_140b871d0(*(arg1 + 0x28f0), sub_140524230)"],
+        ["0x140525960", "sub_140b871c0(*(arg1 + 0x28f0), sub_140504e40)"],
+        ["0x140525973", "sub_140b762b0(*(arg1 + 0x28f0), sub_140524970)"],
+        ["0x140525986", "sub_140b87220(*(arg1 + 0x28f0), sub_140524a70)"],
+        ["0x140525aa1", "*(arg1 + 0x2900) = sub_1423537a0(arg1, \"btnlist_list\")"],
+        ["0x140525b32", "sub_140b65b80(rcx_43, arg1, sub_140524ec0)"]
+      ],
+      "instructions": [
+        ["0x140525922", "48 89 87 f0 28 00 00", "mov qword [rdi+0x28f0], rax"],
+        ["0x14052593a", "e8 c1 18 66 00", "call 0x140b87200"],
+        ["0x140525946", "48 8d 15 e3 e8 ff ff", "lea rdx, [rel 0x140524230]"],
+        ["0x14052594d", "e8 7e 18 66 00", "call 0x140b871d0"],
+        ["0x140525959", "48 8d 15 e0 f4 fd ff", "lea rdx, [rel 0x140504e40]"],
+        ["0x140525960", "e8 5b 18 66 00", "call 0x140b871c0"],
+        ["0x14052596c", "48 8d 15 fd ef ff ff", "lea rdx, [rel 0x140524970]"],
+        ["0x140525973", "e8 38 09 65 00", "call 0x140b762b0"],
+        ["0x14052597f", "48 8d 15 ea f0 ff ff", "lea rdx, [rel 0x140524a70]"],
+        ["0x140525986", "e8 95 18 66 00", "call 0x140b87220"]
+      ],
+      "observed_callback_storage": [
+        {"widget_offset": "0x120", "value": "GUI object", "setter_function": "0x140b87200", "setter_rva": "0xb87200", "instruction": "48 89 91 20 01 00 00 / mov qword [rcx+0x120], rdx"},
+        {"widget_offset": "0x128", "value": "0x140524230", "setter_function": "0x140b871d0", "setter_rva": "0xb871d0", "instruction": "48 89 91 28 01 00 00 / mov qword [rcx+0x128], rdx"},
+        {"widget_offset": "0x130", "value": "0x140504e40", "setter_function": "0x140b871c0", "setter_rva": "0xb871c0", "instruction": "48 89 91 30 01 00 00 / mov qword [rcx+0x130], rdx"},
+        {"widget_offset": "0x210", "value": "0x140524970", "setter_function": "0x140b762b0", "setter_rva": "0xb762b0", "instruction": "48 89 91 10 02 00 00 / mov qword [rcx+0x210], rdx"},
+        {"widget_offset": "0x138", "value": "0x140524a70", "setter_function": "0x140b87220", "setter_rva": "0xb87220", "instruction": "48 89 91 38 01 00 00 / mov qword [rcx+0x138], rdx"}
+      ]
+    },
+    "0x140525c00": {
+      "status": "observed", "rva": "0x525c00", "name": "sub_140525c00", "total_bytes": 8,
+      "instance_vtable_slot": "0x238", "verified_call_signature": "unknown",
+      "hlil": [["0x140525c07", "return \"ui\\equip\\equip_appearance\""]]
+    },
+    "0x140524970": {
+      "status": "observed", "rva": "0x524970", "name": "sub_140524970", "total_bytes": 244,
+      "verified_call_signature": "unknown",
+      "hlil": [["0x1405249cc", "int32_t rax_2 = sub_140b788d0(*(arg1 + 0x28f0), arg3)"], ["0x1405249da", "uint64_t rdx_3 = zx.q(rax_2 u/ 5)"], ["0x1405249dd", "void* rbp_1 = *(arg1 + (rdx_3 << 3) + 0x2920)"], ["0x1405249e8", "int32_t rbx_2 = rax_2 - (rdx_3 * 5).d"], ["0x140524a0f", "rax_6 = sub_14134ce60(sub_141b8dbb0(data_145013950), *(rbp_1 + 4), rbx_2)"], ["0x140524a2b", "*(arg4 + 0x628) &= 0xffffffef"], ["0x140524a1d", "*(arg4 + 0x628) |= 0x10"], ["0x140524a41", "sub_141b463f0(data_14500eca0, 0x1e, rbx_2)"], ["0x140524a5f", "return sub_140524f50(arg1, arg3) __tailcall"]],
+      "semantic_limit": "Selection-related row-flag/detail update, not established native appearance preview or commit."
+    },
+    "0x140524a70": {
+      "status": "observed", "rva": "0x524a70", "name": "sub_140524a70", "total_bytes": 1103,
+      "verified_call_signature": "unknown",
+      "hlil": [["0x140524a91", "if (arg2 == 0)"], ["0x140524b10", "sub_141ae9150(&var_c8, arg1, sub_140523850(rbx_1))"], ["0x140524b20", "var_48 = \" =R@\""], ["0x140524b72", "sub_14050d700(rbx_1 + 0x4ee0 + (*(rbx_1 + 0x8f60) << 7), &var_c8)"], ["0x140524c1d", "sub_141ae90e0(&var_c8, arg1, sub_140523850(rbx_1))"], ["0x140524c22", "rax_8 = &data_142fa7ca8"], ["0x140524a91", "else if (arg2 == 1)"], ["0x140524cdf", "sub_141ae9150(&var_c8, arg1, sub_1405238d0(rbx_1))"], ["0x140524cef", "var_48 = &data_142fa7cd8"], ["0x140524dec", "sub_141ae90e0(&var_c8, arg1, sub_1405238d0(rbx_1))"], ["0x140524df1", "rax_8 = &data_142fa7d08"], ["0x140524e4e", "sub_14050d700((*(rbx_1 + 0x1438) << 7) + 0x3b8 + rbx_1, &var_c8)"]],
+      "semantic_limit": "Two event branches enqueue callable-like structures through manager data_1451c4640. Event 0/1 meanings and preview/cancel/confirm boundaries remain unverified."
+    },
+    "0x140525370": {
+      "status": "observed", "rva": "0x525370", "name": "sub_140525370", "total_bytes": 827,
+      "instance_vtable_slot": "0x2d0", "verified_call_signature": "unknown",
+      "hlil": [
+        ["0x1405253a1", "char rax_1 = sub_14134f7a0(sub_141b8dbb0(data_145013950), 0xf4240)"],
+        ["0x1405254da", "for (int32_t i = 0; i u< 0x2f0; i += 1)"],
+        ["0x1405253b3", "    rax_2, rdx_1 = sub_1416721d0(i)"],
+        ["0x1405253be", "    if (rax_2 != 0)"],
+        ["0x1405253d5", "        uint64_t r14_1 = zx.q(sub_140311500(rax_2).d)"],
+        ["0x1405253e1", "        if (*(rsi_1 + 4) - 0x1d7 u<= 1 || r14_1.d u< 1)"],
+        ["0x140525405", "            int32_t rax_3 = sub_141672230(rsi_1)"],
+        ["0x14052541a", "            if (rax_3 == 2 || rax_2.d == 3)"],
+        ["0x14052542a", "                if (sub_141672810(*(rsi_1 + 4)) != 0)"],
+        ["0x140525445", "                    sub_14134ce60(sub_141b8dbb0(data_145013950), *(rsi_1 + 4), rbx_1)"],
+        ["0x140525453", "                    if (rbx_1 u>= 5) goto label_1405254d2"],
+        ["0x14052546f", "                rax_2, rdx_1 = sub_14134ce60(sub_141b8dbb0(data_145013950), *(rsi_1 + 4), 6)"],
+        ["0x140525476", "                if (rax_2.b != 0)"],
+        ["0x140525478", "                    void* r10_1 = r14_1 * 0xbc8"],
+        ["0x140525484", "                    rdx_1 = *(r10_1 + arg1 + 0x3550)"],
+        ["0x1405254ab", "                            if (*(arg1 + ((rax_8 + r14_1 * 0x2f2) << 2) + 0x2990) == *(rsi_1 + 4)) goto label_1405254d2"],
+        ["0x1405254bd", "                    *(rcx_15 + 0x3550) += 1"],
+        ["0x1405254cb", "                    *(rcx_15 + (*(rcx_15 + 0x3550) << 2) + 0x298c) = rdx_1.d"],
+        ["0x1405253e1", "        else if (rax_1 != 0)"],
+        ["0x1405253f5", "            rax_2 = sub_1405dc320(data_144cd2ac0, 0)"],
+        ["0x1405253fc", "            if (rax_2.b != 0) goto label_140525405"],
+        ["0x14052567b", "sub_140526000(arg1)"],
+        ["0x1405256a6", "return sub_140524f50(arg1, *(*(arg1 + 0x28f0) + 0x274)) __tailcall"]
+      ],
+      "instructions": [
+        ["0x1405253b3", "e8 18 ce 14 01", "call 0x1416721d0"],
+        ["0x1405253cf", "81 e9 d7 01 00 00", "sub ecx, 0x1d7"],
+        ["0x140525405", "e8 26 ce 14 01", "call 0x141672230"],
+        ["0x14052540a", "83 f8 02", "cmp eax, 0x2"],
+        ["0x14052540d", "74 11", "je 0x140525420"],
+        ["0x140525417", "83 f8 03", "cmp eax, 0x3"],
+        ["0x14052541a", "0f 85 b2 00 00 00", "jne 0x1405254d2"],
+        ["0x140525478", "4d 69 d6 c8 0b 00 00", "imul r10, r14, 0xbc8"],
+        ["0x140525484", "49 8b 94 3a 50 35 00 00", "mov rdx, qword [r10+rdi+0x3550]"],
+        ["0x1405254a3", "44 39 84 87 90 29 00 00", "cmp dword [rdi+rax*4+0x2990], r8d"],
+        ["0x1405254bd", "48 ff 81 50 35 00 00", "inc qword [rcx+0x3550]"],
+        ["0x1405254cb", "89 94 81 8c 29 00 00", "mov dword [rcx+rax*4+0x298c], edx"],
+        ["0x1405254d4", "81 fd f0 02 00 00", "cmp ebp, 0x2f0"],
+        ["0x1405254da", "0f 82 d1 fe ff ff", "jb 0x1405253b1"]
+      ],
+      "coverage": "Selected excerpts, not the entire function. Two earlier ad-hoc range queries started at non-boundaries 0x1405253b0 and 0x14134ea10; their invalid initial decodes are excluded. Probe now verifies range starts against analyzed basic-block instruction boundaries."
+    },
+    "0x1416721d0": {
+      "status": "observed", "rva": "0x16721d0", "name": "sub_1416721d0", "total_bytes": 21,
+      "verified_call_signature": "unknown",
+      "hlil": [["0x1416721e0", "return sub_1402798d0(data_145011f00 + 0x127e8, arg1) __tailcall"]],
+      "instructions": [["0x1416721d0", "8b d1", "mov edx, ecx"], ["0x1416721d2", "48 8b 0d 27 fd 99 03", "mov rcx, qword [rel 0x145011f00]"], ["0x1416721d9", "48 81 c1 e8 27 01 00", "add rcx, 0x127e8"], ["0x1416721e0", "e9 eb 76 c0 fe", "jmp 0x1402798d0"]]
+    },
+    "0x1402798d0": {
+      "status": "observed", "rva": "0x2798d0", "name": "sub_1402798d0", "total_bytes": 11,
+      "verified_call_signature": "unknown",
+      "hlil": [["0x1402798da", "return *(arg1 + (zx.q(arg2) << 3) + 0x2efa8)"]]
+    },
+    "0x141672230": {
+      "status": "observed", "rva": "0x1672230", "name": "sub_141672230", "total_bytes": 43,
+      "verified_call_signature": "unknown",
+      "description": "Scans six qword pointers at arg1+0x18; returns the first nonzero byte at pointee+0x13, else zero.",
+      "instructions": [["0x141672232", "48 83 c1 18", "add rcx, 0x18"], ["0x141672236", "48 8b 11", "mov rdx, qword [rcx]"], ["0x14167223e", "44 0f b6 42 13", "movzx r8d, byte [rdx+0x13]"], ["0x14167224e", "83 f8 06", "cmp eax, 0x6"], ["0x141672251", "72 e3", "jb 0x141672236"], ["0x141672256", "41 0f b6 c0", "movzx eax, r8b"]]
+    },
+    "0x141672810": {
+      "status": "observed", "rva": "0x1672810", "name": "sub_141672810", "total_bytes": 13,
+      "verified_call_signature": "unknown", "hlil": [["0x141672819", "result.b = arg1 - 0xc2 u<= 1"]],
+      "instructions": [["0x141672810", "8d 81 3e ff ff ff", "lea eax, [rcx-0xc2]"], ["0x141672816", "83 f8 01", "cmp eax, 0x1"], ["0x141672819", "0f 96 c0", "setbe al"], ["0x14167281c", "c3", "retn"]]
+    },
+    "0x140311500": {
+      "status": "observed", "rva": "0x311500", "name": "sub_140311500", "total_bytes": 3,
+      "verified_call_signature": "unknown", "hlil": [["0x140311502", "return zx.q(*arg1)"]],
+      "instructions": [["0x140311500", "8b 01", "mov eax, dword [rcx]"], ["0x140311502", "c3", "retn"]]
+    },
+    "0x14134ce60": {
+      "status": "observed", "rva": "0x134ce60", "name": "sub_14134ce60", "total_bytes": 7165,
+      "verified_call_signature": "unknown", "coverage": "Bounded first 170 HLIL lines and selected raw fallback block; not all switch cases were inspected.",
+      "hlil": [["0x14134ce77", "uint64_t rax = zx.q(arg2 - 0x8f)"], ["0x14134ce88", "if (rax.d u> 0x214)"], ["0x14134ea22", "    result = sub_1416b6e60(arg2)"], ["0x14134ea2a", "    if (result == 0xffffffff)"], ["0x14134ea46", "        result.b = 0"], ["0x14134ea41", "    result.b = test_bit(*(arg1 + (zx.q(result) u>> 5 << 2) + 0x102428), result & 0x1f)"], ["0x14134d027", "        if (arg3 != 6)"], ["0x14134d036", "            result.b = test_bit(result, arg3)"], ["0x14134d02b", "        result.b = result != 0"]],
+      "hlil_context": "Noncontiguous excerpts: fallback/default region, followed by a result-mask path from switch case 0. The excerpts are not one contiguous control-flow block.",
+      "instructions": [["0x14134ea20", "8b ca", "mov ecx, edx"], ["0x14134ea22", "e8 39 84 36 00", "call 0x1416b6e60"], ["0x14134ea27", "83 f8 ff", "cmp eax, 0xffffffff"], ["0x14134ea2a", "74 1a", "je 0x14134ea46"], ["0x14134ea30", "48 c1 e8 05", "shr rax, 0x5"], ["0x14134ea34", "83 e1 1f", "and ecx, 0x1f"], ["0x14134ea37", "8b 84 83 28 24 10 00", "mov eax, dword [rbx+rax*4+0x102428]"], ["0x14134ea3e", "0f a3 c8", "bt eax, ecx"], ["0x14134ea41", "0f 92 c0", "setb al"]],
+      "semantic_limit": "Availability/unlock-like predicate; not established as current real-armor inventory ownership. Never globally bypass or write these bitsets."
+    },
+    "0x140523680": {
+      "status": "observed", "rva": "0x523680", "name": "sub_140523680", "total_bytes": 94,
+      "verified_call_signature": "unknown",
+      "hlil": [
+        ["0x14052368b", "int64_t* rax = sub_14216f3f0(&data_144ccd020)"],
+        ["0x1405236c4", "void*** result = (*(*rax + 0x38))(rax, 0x4cf0, 0x10, zx.q(data_144ccd054), 0, 0, data_144ccd028)"],
+        ["0x1405236cb", "if (result == 0)"],
+        ["0x1405236dd", "    return result"],
+        ["0x1405236d4", "return sub_140523950(result) __tailcall"]
+      ],
+      "instructions": [
+        ["0x140523684", "48 8d 0d 95 99 7a 04", "lea rcx, [rel 0x144ccd020]"],
+        ["0x14052368b", "e8 60 bd c4 01", "call 0x14216f3f0"],
+        ["0x140523697", "ba f0 4c 00 00", "mov edx, 0x4cf0"],
+        ["0x1405236a3", "41 b8 10 00 00 00", "mov r8d, 0x10"],
+        ["0x1405236c4", "41 ff 52 38", "call qword [r10+0x38]"],
+        ["0x1405236c8", "48 85 c0", "test rax, rax"],
+        ["0x1405236cb", "74 0c", "je 0x1405236d9"],
+        ["0x1405236cd", "48 8b c8", "mov rcx, rax"],
+        ["0x1405236d4", "e9 77 02 00 00", "jmp 0x140523950"]
+      ]
+    },
+    "0x140523950": {
+      "status": "observed", "rva": "0x523950", "name": "sub_140523950", "total_bytes": 241,
+      "verified_call_signature": "unknown",
+      "hlil": [
+        ["0x14052395d", "sub_141fb3d10(arg1)"],
+        ["0x14052396b", "*result = \"P<R@\""],
+        ["0x140523975", "__builtin_memset(&result[0x51e], 0, 0x30)"],
+        ["0x1405239fb", "sub_141fb44e0(result, \"btnlist_tab\", 0)"],
+        ["0x140523a0d", "sub_141fb44e0(result, \"btngrdlink_list\", 0)"],
+        ["0x140523a17", "result[0x398].d = 0xb"],
+        ["0x140523a24", "sub_141fb7dc0(result, 0x36)"],
+        ["0x140523a29", "result[0x453].d |= 0x40000000"]
+      ],
+      "instructions": [
+        ["0x14052395a", "48 8b d9", "mov rbx, rcx"],
+        ["0x14052395d", "e8 ae 03 a9 01", "call 0x141fb3d10"],
+        ["0x140523964", "48 8d 05 8d 3e a8 02", "lea rax, [rel 0x142fa77f8]"],
+        ["0x14052396b", "48 89 03", "mov qword [rbx], rax"],
+        ["0x14052396e", "48 8d bb 20 29 00 00", "lea rdi, [rbx+0x2920]"],
+        ["0x140523975", "48 89 93 f0 28 00 00", "mov qword [rbx+0x28f0], rdx"]
+      ],
+      "hlil_warning": "BN renders the instance-vtable pointer as the string P<R@ because its first qword's low bytes resemble text. Raw LEA and store establish the address; this is not a literal string assignment.",
+      "constructor_references": ["0x1405236d4", "0x1405236e8"],
+      "array_construction_lead": {"function": "sub_1405236f0", "rva": "0x5236f0", "vptr_store_va": "0x140523758", "stride": "0x4cf0"}
+    },
+    "0x140037c30": {
+      "status": "observed",
+      "rva": "0x37c30",
+      "name": "sub_140037c30",
+      "total_bytes": 80,
+      "verified_call_signature": "unknown",
+      "hlil": [
+        ["0x140037c5d", "sub_14216ed60(&data_144ccd020, \"uGUIEquipOuter\", &data_14502cff0, 0x4cf0, 0, 0, 0)"],
+        ["0x140037c70", "data_144ccd020 = &data_142fa77c8"],
+        ["0x140037c7b", "return atexit(sub_142db82b0) __tailcall"]
+      ],
+      "instructions": [
+        ["0x140037c36", "4c 8d 05 b3 53 ff 04", "lea r8, [rel 0x14502cff0]"],
+        ["0x140037c41", "48 8d 15 50 fb f6 02", "lea rdx, [rel 0x142fa7798]"],
+        ["0x140037c4c", "48 8d 0d cd 53 c9 04", "lea rcx, [rel 0x144ccd020]"],
+        ["0x140037c53", "41 b9 f0 4c 00 00", "mov r9d, 0x4cf0"],
+        ["0x140037c5d", "e8 fe 70 13 02", "call 0x14216ed60"],
+        ["0x140037c62", "48 8d 05 5f fb f6 02", "lea rax, [rel 0x142fa77c8]"],
+        ["0x140037c70", "48 89 05 a9 53 c9 04", "mov qword [rel 0x144ccd020], rax"]
+      ]
+    },
+    "0x140525bf0": {
+      "status": "observed",
+      "rva": "0x525bf0",
+      "name": "sub_140525bf0",
+      "total_bytes": 8,
+      "verified_call_signature": "unknown",
+      "hlil": [["0x140525bf7", "return &data_144ccd020"]],
+      "instructions_complete": true,
+      "instructions": [
+        ["0x140525bf0", "48 8d 05 29 74 7a 04", "lea rax, [rel 0x144ccd020]"],
+        ["0x140525bf7", "c3", "retn"]
+      ]
+    }
+  },
+  "regions": {
+    "0x142fa7be8": {
+      "status": "observed", "rva": "0x2fa7be8", "length": 144,
+      "qwords": [["0x0", "0x140523ce0"], ["0x8", "0x140523ce0"], ["0x10", "0x140523e60"], ["0x18", "0x1405241d0"], ["0x20", "0x140523da0"], ["0x28", "0x140240700"], ["0x30", "0x140523d40"], ["0x38", "0x140523d40"], ["0x40", "0x140524000"], ["0x48", "0x140524200"], ["0x50", "0x1402a3ec0"], ["0x58", "0x140240700"], ["0x60", "0x140523d60"], ["0x68", "0x140523d60"], ["0x70", "0x140524170"], ["0x78", "0x140524210"], ["0x80", "0x1402a3ec0"], ["0x88", "0x140240700"]],
+      "interpretation": "Three callable-like tables used by activation dialog branches, each invoke-like entry at +0x10. Distinct from GUI and DTI vtables."
+    },
+    "0x142fa7978": {
+      "status": "observed", "rva": "0x2fa7978", "length": 640,
+      "primary_instance_vtable_base": "0x142fa77f8", "offset_from_primary_base": "0x180",
+      "selected_qwords_relative_to_primary_base": [["0x238", "0x140525c00"], ["0x240", "0x141fb8980"], ["0x250", "0x1405256b0"], ["0x260", "0x140525c10"], ["0x2b8", "0x141fb89b0"], ["0x2d0", "0x140525370"], ["0x2d8", "0x1405252f0"], ["0x2e0", "0x14049f560"], ["0x2e8", "0x5f7473696c6e7462"], ["0x2f0", "0x626174"]],
+      "interpretation": "Observed function-pointer run is followed at primary+0x2e8 by the NUL-terminated text btnlist_tab. Inferred 93-entry extent, not a recovered C++ type or verified ABI. Full 80-qword window also contains adjacent strings and other data; they are not vtable entries."
+    },
+    "0x142fa7c78": {
+      "status": "observed", "rva": "0x2fa7c78", "length": 192,
+      "qwords": [["0x0", "0x140523d20"], ["0x8", "0x140523d20"], ["0x10", "0x140523ff0"], ["0x18", "0x1405241f0"], ["0x20", "0x140240610"], ["0x28", "0x140240700"], ["0x30", "0x140523d00"], ["0x38", "0x140523d00"], ["0x40", "0x140523f80"], ["0x48", "0x1405241e0"], ["0x50", "0x140240610"], ["0x58", "0x140240700"], ["0x60", "0x140523d80"], ["0x68", "0x140523d80"], ["0x70", "0x140524180"], ["0x78", "0x140524220"], ["0x80", "0x140240610"], ["0x88", "0x140240700"], ["0x90", "0x140523cc0"], ["0x98", "0x140523cc0"], ["0xa0", "0x140523db0"], ["0xa8", "0x1405241c0"], ["0xb0", "0x140240610"], ["0xb8", "0x140240700"]],
+      "interpretation": "Four callable-like method tables used by the two event branches of sub_140524a70, not GUI instance tables. Invocation ABI and scheduler thread are unknown."
+    },
+    "0x142fa77c8": {
+      "status": "observed", "rva": "0x2fa77c8", "length": 48,
+      "qwords": [["0x0", "0x14023d590"], ["0x8", "0x140523680"], ["0x10", "0x1405236e0"], ["0x18", "0x1405236f0"], ["0x20", "0x142fa77a8"], ["0x28", "0xffffffff"]],
+      "interpretation": "First four entries support a DTI method table; the adjacent qwords are not asserted to belong to that table."
+    },
+    "0x142fa77f8": {
+      "status": "observed", "rva": "0x2fa77f8", "length": 384,
+      "constructor_store_function": "0x140523950", "constructor_store_va": "0x14052396b",
+      "qwords": [["0x0", "0x140523c50"], ["0x8", "0x140499e90"], ["0x10", "0x140241ee0"], ["0x18", "0x140505490"], ["0x20", "0x140525bf0"], ["0x28", "0x141fb7ed0"], ["0x30", "0x141fb4540"], ["0x38", "0x14023d440"], ["0x40", "0x14023d440"], ["0x48", "0x141fb6a70"], ["0x50", "0x141fb72d0"], ["0x58", "0x14023d430"], ["0x60", "0x141fb59f0"], ["0x68", "0x14023d430"], ["0x70", "0x140240720"], ["0x78", "0x142353870"], ["0x80", "0x14023d430"], ["0x88", "0x142229910"], ["0x90", "0x142228f10"], ["0x98", "0x142228e30"], ["0xa0", "0x141fb7d30"], ["0xa8", "0x14023d430"], ["0xb0", "0x14023d430"], ["0xb8", "0x14023d430"], ["0xc0", "0x1402412b0"], ["0xc8", "0x141fb59c0"], ["0xd0", "0x14023d430"], ["0xd8", "0x14023d430"], ["0xe0", "0x14023d430"], ["0xe8", "0x142229100"], ["0xf0", "0x14023d430"], ["0xf8", "0x14023d440"], ["0x100", "0x14023d430"], ["0x108", "0x140245e70"], ["0x110", "0x14222a590"], ["0x118", "0x14222a5f0"], ["0x120", "0x1402b7740"], ["0x128", "0x142352dc0"], ["0x130", "0x142352b00"], ["0x138", "0x142354b50"], ["0x140", "0x142355730"], ["0x148", "0x140240720"], ["0x150", "0x1423549c0"], ["0x158", "0x141fb4a50"], ["0x160", "0x14023d430"], ["0x168", "0x14023d430"], ["0x170", "0x14023d430"], ["0x178", "0x14023d430"]],
+      "coverage": "Only first 48 qwords. Full instance-vtable extent and callback semantics not established by this window.",
+      "code_references": [["0x1405236f0", "0x14052371d"], ["0x1405236f0", "0x140523758"], ["0x140523950", "0x140523964"], ["0x140523950", "0x14052396b"]]
+    },
+    "0x144ccd020": {
+      "status": "observed",
+      "rva": "0x4ccd020",
+      "length": 96,
+      "bytes": "96 zero bytes in static view (not initialized runtime DTI contents)",
+      "code_reference_functions": ["0x140037c30", "0x140523680", "0x140523c50", "0x141acfe10", "0x140525bf0", "0x142db82b0"],
+      "code_reference_addresses": ["0x140037c4c", "0x140037c70", "0x140523684", "0x140523c70", "0x141ad1c0a", "0x141ad1c11", "0x140525bf0", "0x140525bf7", "0x142db82b7"],
+      "data_reference_addresses": ["0x143f9dff8"],
+      "coverage": "Existing BN cross-reference database, nine code refs and one data ref returned without truncation."
+    }
+  },
+  "remaining_unknowns": [
+    "Every native callable signature and argument ownership/lifetime, including constructor, widget callbacks, dialog callables, context accessors and sub_142041700. Displayed BN prototypes are not approved call definitions.",
+    "Live GUI/player identity, module relocation/signature uniqueness, active TEST slot index/readiness and game/UI-thread provenance. Static indexed-context stride 0x26cc00 does not validate a runtime profile.",
+    "Native group+4 and native piece+0x1e ID mappings to packed armor.am_dat row/set/model domains; accepted real-armor values, variants, gender and special/full-body representation.",
+    "Real armor ownership iterator/count/bounds, equipped-item inclusion, stale-ownership handling and loadout revalidation. Catalog loop 0x2f0 and display page counts are not inventory bounds; equipped-pane fallback stride 0x98 is only a lead.",
+    "Complete semantics of the large availability switch and category/progression-like guards. Bitset availability is not established as current ownership; no global predicate or unlock modification is justified.",
+    "Canonical saved versus live versus preview buffers, final commit/cancel restoration and serialization. Static menu writes into two representations do not establish which are durable or transient.",
+    "Exact UI meanings of dialog result 0 and callback event codes 0/1, all preview/cancel paths, parent GUI transitions and scheduler execution thread. Observed result gates do not prove a complete reversible transaction.",
+    "Native refresh side effects/flag meanings, safe refresh timing, pigments/stat preservation and visual success. Only a statically connected refresh candidate is established.",
+    "Loadout application entry points and ownership checks were not established in this bounded constructor/menu-local analysis. No claim of absence follows.",
+    "Full-menu integration, actual appearance application, save/reload acceptance and multiplayer behavior remain untested. No hooks, writes, native calls or deployment are enabled."
+  ],
+  "resume": {
+    "probe_command": "pwsh -NoLogo -NoProfile -NonInteractive -Command 'bnctl exec -f \"C:/Projects/MHW Mods/re/probes/recover_layered_menu.py\"'",
+    "preset_selection": "Before a probe call, use a one-line bnctl exec or stdin to import claude_bnx as bnx and set bnx.stash['layered_menu_query'] = {'preset': NAME}. This changes only task-local Python stash, not analysis metadata. Use stdin/-f for multiline code.",
+    "presets": ["anchors", "factory", "instance-vtable", "enumeration", "enumeration-raw", "helpers", "availability", "bindings", "activation", "activation-tail", "activation-raw", "dialog-tables", "single-result", "set-result", "type3-result", "refresh-lead", "event-dispatch", "contexts"],
+    "next_static_targets": [
+      "Trace native group/piece construction and the ID lookup sub_1402798a0 from sub_141672160 to map the two appearance representations without assuming packed asset offsets.",
+      "Trace UI callback invocation sites for widget+0x128/+0x138/+0x210 and dialog-manager dispatch to prove ABI/event meanings and thread scheduling, without renaming/retyping existing BN data.",
+      "Trace sub_142041700 -> sub_141258770 and snapshot/restore users of the two appearance representations before treating any candidate as safe preview/commit/cancel refresh.",
+      "Keep any future loadout/ownership work separately bounded and evidence-labeled; do not globally bypass availability or broaden this task into runtime execution."
+    ],
+    "session_preserved": "Existing GUI BN remained on the same isolated database. No save, close, retarget, new BN/game process, native invocation, BN metadata mutation, or external source/test/build/doc edit was requested."
+  }
+}

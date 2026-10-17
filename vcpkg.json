@@ -1,0 +1,8 @@
+{
+  "name": "mhw-fairtransmog",
+  "version": "0.1.0",
+  "dependencies": [
+    "minhook"
+  ],
+  "builtin-baseline": "7ff71c68261ecf3b60cdb8772f2e6759ee0a71b1"
+}

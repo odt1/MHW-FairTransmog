@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="(empty)"
+	tests="5"
+	failures="0"
+	disabled="0"
+	skipped="0"
+	hostname=""
+	time="0"
+	timestamp="2026-10-16T11:02:42"
+	>
+	<testcase name="memory" classname="memory" time="0.0065169" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="profile" classname="profile" time="0.0144763" status="run">
+		<properties/>
+		<system-out>PASS known SHA-256 vectors (empty, abc, multi-chunk)
+PASS missing, directory, sharing-denied errors and recovery
+PASS actual host module path and invalid module
+PASS actual host disk identity with independent CNG cross-check
+</system-out>
+	</testcase>
+	<testcase name="bootstrap" classname="bootstrap" time="0.0275848" status="run">
+		<properties/>
+		<system-out>bootstrap: unsupported host reached the logging-only fail-closed terminal marker
+</system-out>
+	</testcase>
+	<testcase name="armor_inspector" classname="armor_inspector" time="0.0916167" status="run">
+		<properties/>
+		<system-out>...............
+----------------------------------------------------------------------
+Ran 15 tests in 0.014s
+
+OK
+</system-out>
+	</testcase>
+	<testcase name="deploy" classname="deploy" time="0.443933" status="run">
+		<properties/>
+		<system-out>PASS: missing source fails before writes
+PASS: first deployment preserves unrelated files and ignores helper DLLs
+PASS: replacement backs up verified original bytes and verifies new bytes
+PASS: missing optional PDB is supported
+PASS: initial running-game guard rejects before writes
+PASS: second running-game guard preserves plugin and verified backup
+PASS: corrupt backup is rejected before either original is replaced
+PASS: corrupt deployment is reported while verified backup remains available
+</system-out>
+	</testcase>
+</testsuite>
