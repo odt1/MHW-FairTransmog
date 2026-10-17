@@ -87,7 +87,7 @@ Ownership re-check (`layered_menu::OnRefresh`, called from the refresh hook befo
 
 - **Observed, live 2026-10-18 (release DLL, TEST):** `tools/live/write_saved.js` planted unowned set 480 in the saved head slot (`[1,1,1,1,1]` → `[480,1,1,1,1]`); touching the ini made the plugin refresh; log `cleared Head set 480 from layered armor; the character no longer owns it`; saved `[-1,1,1,1,1]`, actor `[-1,2,2,2,2]`. Head restored afterwards to set 1 / actor 2.
 - **Retracted inference:** "armor cannot be sold in MHW" was wrong (observed by the user below).
-- **Unknown:** armor de-crafting. The user reports armor can be de-crafted; a search of `assets/chunk/common/text/steam/*_eng.gmd` for "rollback", "melt" and "dismantle" found no armor option. Any action that removes the piece from the box is handled the same way (inferred from the code).
+- **Observed, user correction 2026-10-18:** armor cannot be de-crafted; that was weapon rollback. Consistent with a search of `assets/chunk/common/text/steam/*_eng.gmd` for "rollback", "melt" and "dismantle", which found no armor option. Selling is the way armor leaves the box in normal play; any other removal is handled the same way (inferred from the code).
 
 - **Observed, user-confirmed 2026-10-18 (beta 0.9.0):** real armor worn as layered armor through the fair path, then sold: the look stayed until the next refresh (selling triggers none). After saving and relaunching, the load refresh cleared those saved layered slots, so the slots show the equipped armor again.
 - **Inferred:** an area change clears them too: area loads call the hooked refresh for the local player (observed earlier, "Override persistence"), and `OnRefresh` runs at the start of every such call. Not tried with sold armor.

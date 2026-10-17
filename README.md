@@ -1,8 +1,8 @@
 # MHW FairTransmog (beta 0.9.0)
 
-Wear the look of real armor you own as layered armor, picked from the game's own Layered Armor menu. No unlocks to grind, no stat changes, no new menus.
+Wear the look of real armor you own as layered armor, selectable in-game from the Layered Armor menu.
 
-For when you want a cheat instead, an optional ini setting shows any armor set in any slot, the way other transmog mods do.
+Or edit the mod's `MHW-FairTransmog.ini` directly, selecting any armor set ID for any slot that set has a piece for, with hot-reload.
 
 ## Features
 
@@ -12,7 +12,7 @@ For when you want a cheat instead, an optional ini setting shows any armor set i
 - Only pieces you actually own can be picked. If you own just the helm and chest of a set, only those two are selectable.
 - Whole sets, single pieces, full-body armor, pigment and layered loadouts all work through the game's own menu, exactly like normal layered armor.
 - Your choice is saved by the game like any layered armor and survives quests, area changes and reloading.
-- If you sell or de-craft a piece you are wearing as layered armor, it is removed from your layered armor the next time the game refreshes your look (changing area, starting a quest, reloading, or changing layered armor). Until then the look stays.
+- If a piece you are wearing as layered armor leaves your equipment box (for example when you sell it), it is removed from your layered armor the next time the game refreshes your look (changing area, starting a quest, reloading, or changing layered armor). Until then the look stays.
 - Master rank armor is listed in the master rank tab, which the game shows according to its own story requirements (not yet tested on a master rank character).
 
 ### Cheat mode: any armor set
