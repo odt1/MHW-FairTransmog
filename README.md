@@ -12,7 +12,7 @@ For when you want a cheat instead, an optional ini setting shows any armor set i
 - Only pieces you actually own can be picked. If you own just the helm and chest of a set, only those two are selectable.
 - Whole sets, single pieces, full-body armor, pigment and layered loadouts all work through the game's own menu, exactly like normal layered armor.
 - Your choice is saved by the game like any layered armor and survives quests, area changes and reloading.
-- If you sell a piece you are wearing as layered armor, it is removed from your layered armor the next time the game refreshes your look (changing area, starting a quest, reloading, or changing layered armor). Until then the look stays.
+- If you sell or de-craft a piece you are wearing as layered armor, it is removed from your layered armor the next time the game refreshes your look (changing area, starting a quest, reloading, or changing layered armor). Until then the look stays.
 - Master rank armor is listed in the master rank tab, which the game shows according to its own story requirements (not yet tested on a master rank character).
 
 ### Cheat mode: any armor set
