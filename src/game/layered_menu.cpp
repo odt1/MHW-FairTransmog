@@ -17,6 +17,7 @@
 #include <cstring>
 #include <cwchar>
 #include <format>
+#include <mutex>
 #include <optional>
 #include <utility>
 #include <vector>
@@ -194,46 +195,80 @@ bool IsOrdinary(std::uint8_t type) noexcept {
     return type == kOrdinary || type == kFullBodyOrdinary;
 }
 
-bool Owns(const Ownership& owned, const std::uint8_t* record, std::size_t slot) noexcept {
+// The part's per-slot key, or nothing when the set has no part there or the key is out of range.
+std::optional<std::size_t> PartKey(const std::uint8_t* record, std::size_t slot) noexcept {
     const auto* part = Part(record, slot);
     if (part == nullptr) {
-        return false;
+        return std::nullopt;
     }
     const auto key = mem::Read<std::uint16_t>(part + kPartKey);
-    return key && *key < kRowKeys && owned[slot][*key];
+    if (!key || *key >= kRowKeys) {
+        return std::nullopt;
+    }
+    return *key;
 }
 
-// True when the game has armor data for this piece of the set (used by the SuperCheat mode).
-bool Exists(const std::uint8_t* record, std::size_t slot) noexcept {
-    const auto* part = Part(record, slot);
-    if (part == nullptr) {
-        return false;
-    }
-    const auto key = mem::Read<std::uint16_t>(part + kPartKey);
-    auto* equipment = mem::Read<std::uint8_t*>(g_exe + kEquipMetadataRva).value_or(nullptr);
-    if (!key || *key >= kRowKeys || equipment == nullptr) {
+bool Owns(const Ownership& owned, const std::uint8_t* record, std::size_t slot) noexcept {
+    const auto key = PartKey(record, slot);
+    return key && owned[slot][*key];
+}
+
+// True when the game has armor data for this piece of the set (used by the SuperCheat mode): the
+// per-slot row for the key is not null. `equipment` is the metadata base, read once by the caller.
+bool Exists(const std::uint8_t* equipment, const std::uint8_t* record, std::size_t slot) noexcept {
+    const auto key = PartKey(record, slot);
+    if (!key || equipment == nullptr) {
         return false;
     }
     const auto row = mem::Read<std::uintptr_t>(equipment + kRowTable + slot * kRowSlotStride + *key * sizeof(void*));
     return row && *row != 0;
 }
 
-bool ExistsAny(const std::uint8_t* record) noexcept {
-    for (std::size_t slot = 0; slot != kSlots; ++slot) {
-        if (Exists(record, slot)) {
+const std::uint8_t* EquipmentMetadata() noexcept {
+    return mem::Read<const std::uint8_t*>(g_exe + kEquipMetadataRva).value_or(nullptr);
+}
+
+// One answer for both the list and the unlock check: slot 0-4, or kAnyPiece.
+bool ExistsAt(const std::uint8_t* record, int slot) noexcept {
+    const auto* equipment = EquipmentMetadata();
+    if (slot != kAnyPiece) {
+        return slot >= 0 && slot < static_cast<int>(kSlots) && Exists(equipment, record, static_cast<std::size_t>(slot));
+    }
+    for (std::size_t each = 0; each != kSlots; ++each) {
+        if (Exists(equipment, record, each)) {
             return true;
         }
     }
     return false;
 }
 
+// Re-parses the ini only when its write time changes, and keeps the last value when the file cannot
+// be read, so a locked or half-written file never flips the mode (turning it off clears selections).
+std::mutex g_super_mutex;
+FILETIME g_super_stamp{};
+
 void RefreshSuperFlag() noexcept {
     if (!g_installed) {
         return;
     }
-    const bool super = GetPrivateProfileIntW(L"Transmog", L"SuperCheat", 0, g_config_path.c_str()) != 0;
-    if (g_super.exchange(super) != super) {
-        SafeLog("Layered menu: SuperCheat {}.", super ? "on: every armor set is offered" : "off");
+    try {
+        const std::lock_guard lock(g_super_mutex);
+        WIN32_FILE_ATTRIBUTE_DATA file{};
+        if (!GetFileAttributesExW(g_config_path.c_str(), GetFileExInfoStandard, &file) ||
+            CompareFileTime(&file.ftLastWriteTime, &g_super_stamp) == 0) {
+            return;
+        }
+        g_super_stamp = file.ftLastWriteTime;
+        wchar_t text[16]{};
+        GetPrivateProfileStringW(L"Transmog", L"SuperCheat", L"0", text, static_cast<DWORD>(std::size(text)),
+                                 g_config_path.c_str());
+        const bool super = text[0] == L'1' || _wcsicmp(text, L"true") == 0 || _wcsicmp(text, L"on") == 0 ||
+                           _wcsicmp(text, L"yes") == 0;
+        if (g_super.exchange(super) != super) {
+            SafeLog("Layered menu: SuperCheat {}.", super ? "on: every armor set is offered" : "off");
+        }
+    } catch (...) {
+        // Keep the previous value.
     }
 }
 
@@ -281,9 +316,8 @@ std::optional<std::size_t> ScanBox(Ownership& owned) {
     for (const auto set : g_test_owned_sets) {
         const auto* record = SetRecord(set);
         for (std::size_t slot = 0; record != nullptr && slot != kSlots; ++slot) {
-            const auto* part = Part(record, slot);
-            const auto key = part ? mem::Read<std::uint16_t>(part + kPartKey) : std::nullopt;
-            if (key && *key < kRowKeys) {
+            const auto key = PartKey(record, slot);
+            if (key) {
                 owned[slot][*key] = true;
                 ++pieces;
             }
@@ -304,7 +338,7 @@ void CollectFairSets() {
     for (std::int32_t set = 0; set != kSetLimit; ++set) {
         const auto* record = SetRecord(set);
         const auto type = record ? SetType(record) : kLayered;
-        if (!IsOrdinary(type) || !(super ? ExistsAny(record) : OwnsAny(owned, record))) {
+        if (!IsOrdinary(type) || !(super ? ExistsAt(record, kAnyPiece) : OwnsAny(owned, record))) {
             continue;
         }
         SetCopy copy{};
@@ -347,13 +381,14 @@ void* __fastcall CatalogAtDetour(int index) {
             g_fair_sets.clear();
         }
         g_next_fair = 0;
+        g_logged_overflow = false;
     }
     if (record == nullptr && g_next_fair < g_fair_sets.size()) {
         return g_fair_sets[g_next_fair++].data();
     }
     if (index == 0x2EF && g_next_fair < g_fair_sets.size() && !g_logged_overflow) {
         g_logged_overflow = true;
-        SafeLog("Layered menu: {} owned sets did not fit the list's free entries.", g_fair_sets.size() - g_next_fair);
+        SafeLog("Layered menu: {} ordinary sets did not fit the list's free entries.", g_fair_sets.size() - g_next_fair);
     }
     return record;
 }
@@ -379,9 +414,7 @@ std::uint64_t __fastcall AvailableDetour(void* user, int set, int slot) {
         const auto* record = SetRecord(set);
         const bool super = g_super.load(std::memory_order_relaxed);
         if (record != nullptr && super) {
-            const bool exists = slot == kAnyPiece ? ExistsAny(record)
-                                                  : slot >= 0 && slot < static_cast<int>(kSlots) &&
-                                                        Exists(record, static_cast<std::size_t>(slot));
+            const bool exists = ExistsAt(record, slot);
             // Layered sets keep their own unlock rule; SuperCheat only adds to it.
             return IsOrdinary(SetType(record)) ? exists : exists || (g_available(user, set, slot) & 0xFF) != 0;
         }

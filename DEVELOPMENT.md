@@ -18,6 +18,7 @@ All addresses are RVAs in the unpacked image of that single build. The game no l
   - hooks the layered unlock check (RVA `0x134CE60`). For ordinary sets queried by the layered menu (RVA `0x523A50`–`0x5266AF`), it answers from equipment-box ownership.
   - the game's own menu then lists, applies and saves the choice in `user+0xE7434`.
   - `OnRefresh`, called from the refresh hook, clears saved layered slots that hold ordinary armor the character no longer owns.
+  - `[Transmog] SuperCheat=1` (re-read when the ini's write time changes) replaces ownership with piece existence (non-null per-slot row, inferred from the row lookup) in all three places: the list offers every ordinary set, the unlock check answers `exists` for ordinary sets and `native || exists` for layered ones, and `OnRefresh` clears nothing.
 - Ownership: the equipment box is 4,260 inline entries of `0x98` bytes at `user+0x41068`. An armor entry's `+0x20` slot and `+0x24` id; the id equals the part's `+0x1E` key, the actor value, and the asset's `Set_Group`.
 
 `FAIR_TRANSMOG_DIAGNOSTICS` (the `diagnostic` preset) adds `[Diagnostics] OwnedSets=216,…` to the ini: those set IDs count as owned, for testing the fair path without save edits.

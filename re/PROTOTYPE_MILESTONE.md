@@ -134,4 +134,5 @@ The "live layered array" at `user+0xE7328` (`[190,191,192,193,194]`) is part of 
 
 - **Observed (live, user report):** with `[Transmog] SuperCheat=1` the Layered Armor list offers every ordinary armor set, selection and preview work first try (build SHA-256 prefix `d2c1ee8d`).
 - **Implementation:** `layered_menu.cpp` `CollectFairSets` feeds every ordinary set with at least one existing piece (non-null per-slot row at `equip+0x127E8+8+slot*0x2EF0+key*8`) into free catalog entries; `AvailableDetour` answers from piece existence for ordinary sets and `native || exists` for layered sets; `OnRefresh` clears nothing while the flag is on. The flag is re-read from the ini when the list is built and on each refresh.
+- **Inferred:** a non-null per-slot row means the piece exists (from the row lookup decompilation); live, no placeholder sets were reported.
 - **Unknown:** master rank tab contents under SuperCheat, behaviour with multiplayer.

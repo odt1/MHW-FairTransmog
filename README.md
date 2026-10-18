@@ -6,6 +6,8 @@ Wear the look of real armor you own as layered armor, selectable in-game from th
 
 Or edit the mod's `MHW-FairTransmog.ini` directly, selecting any armor set ID for any slot that set has a piece for, with hot-reload.
 
+*OR* enable `SuperCheat` option to instantly unlock *every* armor in the game as a Layered Armor and preview it in-game from the Equipment Box.
+
 ## Features
 
 ![Demo](images/demo.jpg)
@@ -45,7 +47,8 @@ Off by default. Add `SuperCheat=1` under `[Transmog]` in `MHW-FairTransmog.ini`:
 
 - Every armor set (and every piece of it that exists) shows up in **Equipment Box → Layered Armor Settings**, so you can preview and select any of them with the game's own menu, owned or not. Layered sets you have not unlocked are available too.
 - Reopen the menu after changing the setting; no restart needed.
-- Selecting an unowned piece stores it in your save like any layered armor, so with `SuperCheat=0` the plugin removes unowned pieces again the next time the game refreshes your look.
+- Sets are listed in the same two tabs as other layered armor, so the master rank tab (where most sets live) shows only when the game itself shows it, after the story progress it requires.
+- Selecting an unowned piece stores it in your save like any layered armor. With `SuperCheat=0` the plugin removes unowned ordinary armor again the next time the game refreshes your look. Unlocked-by-SuperCheat layered sets stay until you change them.
 
 ## Requirements
 
