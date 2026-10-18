@@ -39,6 +39,14 @@ Legs=-1
 - Changes apply within about a second while the game runs; no restart needed. Cheat mode is shown on top of whatever the Layered Armor menu has selected.
 - Cheat mode only changes what is drawn. It never writes to your save, equipment or inventory.
 
+### Super-cheat mode: every armor set in the Layered Armor menu
+
+Off by default. Add `SuperCheat=1` under `[Transmog]` in `MHW-FairTransmog.ini`:
+
+- Every armor set (and every piece of it that exists) shows up in **Equipment Box → Layered Armor Settings**, so you can preview and select any of them with the game's own menu, owned or not. Layered sets you have not unlocked are available too.
+- Reopen the menu after changing the setting; no restart needed.
+- Selecting an unowned piece stores it in your save like any layered armor, so with `SuperCheat=0` the plugin removes unowned pieces again the next time the game refreshes your look.
+
 ## Requirements
 
 - Monster Hunter: World: Iceborne on PC, the final Steam version (15.23). The plugin checks the game executable when it starts and does nothing on any other version.

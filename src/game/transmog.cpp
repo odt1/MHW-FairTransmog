@@ -79,7 +79,11 @@ constexpr char kDefaultConfig[] =
     "Chest=-1\n"
     "Arms=-1\n"
     "Waist=-1\n"
-    "Legs=-1\n";
+    "Legs=-1\n"
+    ";\n"
+    "; SuperCheat=1 lists every armor set in the Layered Armor menu so you can preview and select any\n"
+    "; piece, owned or not. With SuperCheat=0 pieces you do not own are removed again at the next refresh.\n"
+    "SuperCheat=0\n";
 
 using MainUpdateFn = void*(__fastcall*)(void* self);
 using RefreshFn = void*(__fastcall*)(void* player, int flag, int flag2);

@@ -129,3 +129,9 @@ The "live layered array" at `user+0xE7328` (`[190,191,192,193,194]`) is part of 
 2. Done since: full-body ordinary armor (see "Full-body ordinary armor"). Original note: full-body ordinary armor (catalog type 1, not offered yet); master-rank owned sets in tab 1 on a character with that story progress. **Observed, `armor.am_dat`:** type 1 = 11 full-body ordinary sets (215–218, 242, 244, 245, 473, 484, 485, 678), type 3 = 8 full-body layered sets (154–156, 159, 246, 247, 486, 487); each has all five slot records. The native selection treats type 3 specially (confirmation dialog, all slots at once), so offering type 1 needs that path and a box check for how full-body pieces are stored; TEST owns none, so it cannot be tested on TEST yet.
 3. Pigment and hidden-helmet interaction; what other players see in multiplayer (fair path stores real set IDs in the layered save fields; direct override is likely local-only).
 4. List order: owned ordinary sets fill the builder's empty catalog entries, so they appear before the layered sets. User decision 2026-10-18: keep this order.
+
+## SuperCheat menu mode (2026-10-18)
+
+- **Observed (live, user report):** with `[Transmog] SuperCheat=1` the Layered Armor list offers every ordinary armor set, selection and preview work first try (build SHA-256 prefix `d2c1ee8d`).
+- **Implementation:** `layered_menu.cpp` `CollectFairSets` feeds every ordinary set with at least one existing piece (non-null per-slot row at `equip+0x127E8+8+slot*0x2EF0+key*8`) into free catalog entries; `AvailableDetour` answers from piece existence for ordinary sets and `native || exists` for layered sets; `OnRefresh` clears nothing while the flag is on. The flag is re-read from the ini when the list is built and on each refresh.
+- **Unknown:** master rank tab contents under SuperCheat, behaviour with multiplayer.

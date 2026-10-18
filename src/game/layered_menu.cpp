@@ -10,6 +10,7 @@
 #include <MinHook.h>
 
 #include <array>
+#include <atomic>
 #include <bitset>
 #include <cstddef>
 #include <cstdint>
@@ -84,6 +85,9 @@ constexpr std::ptrdiff_t kPartKey = 0x1E;
 constexpr std::int32_t kSetLimit = (0x41790 - kSetTable) / kSetStride;
 // Per-slot keys are bounds-checked against 0x2EF by the native row lookup (RVA 0x279740).
 constexpr std::size_t kRowKeys = 0x2EF;
+// Per-slot armor row pointers in the equipment metadata (null when the piece does not exist).
+constexpr std::ptrdiff_t kRowTable = 0x127E8 + 8;
+constexpr std::size_t kRowSlotStride = 0x2EF0;
 constexpr std::size_t kSlots = 5;
 constexpr std::int32_t kAnyPiece = 6;
 constexpr std::array<const char*, kSlots> kSlotNames{"Head", "Chest", "Arms", "Waist", "Legs"};
@@ -106,6 +110,11 @@ struct SetCopy {
 
 std::uint8_t* g_exe = nullptr;
 bool g_installed = false;
+// Written once by Install before the hooks are enabled.
+std::filesystem::path g_config_path;
+// "SuperCheat" ini switch: every armor set is offered and selectable. Re-read whenever the list is
+// built and before each refresh, so it applies without restarting the game.
+std::atomic<bool> g_super{false};
 CatalogAtFn g_catalog_at = nullptr;
 SetTypeFn g_set_type = nullptr;
 AvailableFn g_available = nullptr;
@@ -194,6 +203,40 @@ bool Owns(const Ownership& owned, const std::uint8_t* record, std::size_t slot) 
     return key && *key < kRowKeys && owned[slot][*key];
 }
 
+// True when the game has armor data for this piece of the set (used by the SuperCheat mode).
+bool Exists(const std::uint8_t* record, std::size_t slot) noexcept {
+    const auto* part = Part(record, slot);
+    if (part == nullptr) {
+        return false;
+    }
+    const auto key = mem::Read<std::uint16_t>(part + kPartKey);
+    auto* equipment = mem::Read<std::uint8_t*>(g_exe + kEquipMetadataRva).value_or(nullptr);
+    if (!key || *key >= kRowKeys || equipment == nullptr) {
+        return false;
+    }
+    const auto row = mem::Read<std::uintptr_t>(equipment + kRowTable + slot * kRowSlotStride + *key * sizeof(void*));
+    return row && *row != 0;
+}
+
+bool ExistsAny(const std::uint8_t* record) noexcept {
+    for (std::size_t slot = 0; slot != kSlots; ++slot) {
+        if (Exists(record, slot)) {
+            return true;
+        }
+    }
+    return false;
+}
+
+void RefreshSuperFlag() noexcept {
+    if (!g_installed) {
+        return;
+    }
+    const bool super = GetPrivateProfileIntW(L"Transmog", L"SuperCheat", 0, g_config_path.c_str()) != 0;
+    if (g_super.exchange(super) != super) {
+        SafeLog("Layered menu: SuperCheat {}.", super ? "on: every armor set is offered" : "off");
+    }
+}
+
 bool OwnsAny(const Ownership& owned, const std::uint8_t* record) noexcept {
     for (std::size_t slot = 0; slot != kSlots; ++slot) {
         if (Owns(owned, record, slot)) {
@@ -250,6 +293,8 @@ std::optional<std::size_t> ScanBox(Ownership& owned) {
 }
 
 void CollectFairSets() {
+    RefreshSuperFlag();
+    const bool super = g_super.load();
     Ownership owned;
     const std::size_t pieces = ScanBox(owned).value_or(0);
     AcquireSRWLockExclusive(&g_owned_lock);
@@ -259,7 +304,7 @@ void CollectFairSets() {
     for (std::int32_t set = 0; set != kSetLimit; ++set) {
         const auto* record = SetRecord(set);
         const auto type = record ? SetType(record) : kLayered;
-        if (!IsOrdinary(type) || !OwnsAny(owned, record)) {
+        if (!IsOrdinary(type) || !(super ? ExistsAny(record) : OwnsAny(owned, record))) {
             continue;
         }
         SetCopy copy{};
@@ -276,8 +321,8 @@ void CollectFairSets() {
     }
     if (g_fair_sets.size() != g_logged_offer) {
         g_logged_offer = g_fair_sets.size();
-        SafeLog("Layered menu: offering {} owned ordinary armor sets ({} owned armor pieces in the box).",
-                g_fair_sets.size(), pieces);
+        SafeLog("Layered menu: offering {} {} ordinary armor sets ({} owned armor pieces in the box).",
+                g_fair_sets.size(), super ? "SuperCheat" : "owned", pieces);
     }
 }
 
@@ -332,6 +377,14 @@ std::uint64_t __fastcall SetTypeDetour(const void* record) {
 std::uint64_t __fastcall AvailableDetour(void* user, int set, int slot) {
     if (CalledFrom(_ReturnAddress(), kMenuBegin, kMenuEnd)) {
         const auto* record = SetRecord(set);
+        const bool super = g_super.load(std::memory_order_relaxed);
+        if (record != nullptr && super) {
+            const bool exists = slot == kAnyPiece ? ExistsAny(record)
+                                                  : slot >= 0 && slot < static_cast<int>(kSlots) &&
+                                                        Exists(record, static_cast<std::size_t>(slot));
+            // Layered sets keep their own unlock rule; SuperCheat only adds to it.
+            return IsOrdinary(SetType(record)) ? exists : exists || (g_available(user, set, slot) & 0xFF) != 0;
+        }
         if (record != nullptr && IsOrdinary(SetType(record))) {
             AcquireSRWLockShared(&g_owned_lock);
             const bool owned = slot == kAnyPiece ? OwnsAny(g_owned, record)
@@ -348,6 +401,7 @@ std::uint64_t __fastcall AvailableDetour(void* user, int set, int slot) {
 
 bool Install(const std::filesystem::path& config_path) {
     g_exe = reinterpret_cast<std::uint8_t*>(GetModuleHandleW(nullptr));
+    g_config_path = config_path;
 #if FAIR_TRANSMOG_DIAGNOSTICS
     wchar_t text[256]{};
     GetPrivateProfileStringW(L"Diagnostics", L"OwnedSets", L"", text, static_cast<DWORD>(std::size(text)),
@@ -367,8 +421,6 @@ bool Install(const std::filesystem::path& config_path) {
     if (!g_test_owned_sets.empty()) {
         log::Log("Layered menu: diagnostic build treats {} configured set(s) as owned.", g_test_owned_sets.size());
     }
-#else
-    (void)config_path;
 #endif
     auto* catalog_at = g_exe + kCatalogAtRva;
     auto* set_type = g_exe + kSetTypeRva;
@@ -413,6 +465,7 @@ bool Install(const std::filesystem::path& config_path) {
         return false;
     }
     g_installed = true;
+    RefreshSuperFlag();
     log::Write("Layered menu: owned ordinary armor is offered in Layered Armor Settings (fair path).");
     return true;
 }
@@ -422,6 +475,11 @@ void OnRefresh(std::uint8_t* player) noexcept {
         return;
     }
     try {
+        // SuperCheat lets the character wear sets it does not own, so nothing is cleared.
+        RefreshSuperFlag();
+        if (g_super.load()) {
+            return;
+        }
         Ownership owned;
         auto* user = SelectedUser();
         // An unreadable or not yet loaded box must never be mistaken for "owns nothing"; a loaded box
