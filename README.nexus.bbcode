@@ -1,0 +1,69 @@
+[center][img]https://raw.githubusercontent.com/odt1/MHW-FairTransmog/main/images/banner.jpg[/img][/center]
+
+Wear the look of real armor you own as layered armor, selectable in-game from the Equipment Box menu.
+
+Or edit the mod's [font=Courier New]MHW-FairTransmog.ini[/font] directly, selecting any armor set ID for any slot that set has a piece for, with hot-reload.
+
+[size=5][b]Features[/b][/size]
+
+[center][img]https://raw.githubusercontent.com/odt1/MHW-FairTransmog/main/images/demo.jpg[/img][/center]
+
+[size=4][b]Fair transmog: owned armor as layered armor[/b][/size]
+[list]
+[*]Real armor you own shows up in [b]Equipment Box → Layered Armor Settings[/b], next to the regular layered sets (at the top of the list).
+[*]Only pieces you actually own can be picked. If you own just the helm and chest of a set, only those two are selectable.
+[*]Whole sets, single pieces, full-body armor, pigment and layered loadouts all work through the game's own menu, exactly like normal layered armor.
+[*]Your choice is saved by the game like any layered armor and survives quests, area changes and reloading.
+[*]If a piece you are wearing as layered armor leaves your equipment box (for example when you sell it), it is removed from your layered armor the next time the game refreshes your look (changing area, starting a quest, reloading, or changing layered armor). Until then the look stays.
+[*]Master rank armor is listed in the master rank tab, which the game shows according to its own story requirements (not yet tested on a master rank character).
+[/list]
+
+[size=4][b]"Cheat" mode: any armor set[/b][/size]
+Off by default. [font=Courier New]MHW-FairTransmog.ini[/font] is created next to the plugin on first launch:
+[code]
+[Transmog]
+All=-1
+Head=-1
+Chest=-1
+Arms=-1
+Waist=-1
+Legs=-1
+[/code]
+[list]
+[*]Put an armor set ID in a slot to show that set's piece there, owned or not. The full ID list, sorted by rarity, is in [b]ARMOR_IDS.md[/b] in the download.
+[*][font=Courier New]All[/font] sets all five slots at once. A slot with its own ID uses that one instead, so [font=Courier New]All=480[/font] with [font=Courier New]Head=190[/font] gives you a Fatalis α+ body with a Samurai helm.
+[*][font=Courier New]-1[/font] (or leaving the value empty) turns a slot off and shows the game's own look again.
+[*]Changes apply within about a second while the game runs; no restart needed. Cheat mode is shown on top of whatever the Layered Armor menu has selected.
+[*]Cheat mode only changes what is drawn. It never writes to your save, equipment or inventory.
+[/list]
+
+[size=5][b]Requirements[/b][/size]
+[list]
+[*]Monster Hunter: World: Iceborne on PC, the final Steam version (15.23). The plugin checks the game executable when it starts and does nothing on any other version.
+[*][url=https://www.nexusmods.com/monsterhunterworld/mods/1982]Stracker's Loader[/url].
+[*]Tested with Stracker's Loader together with a CRC-bypass plugin ([font=Courier New]!CRCBypass.dll[/font]). Other setups are untested.
+[/list]
+
+[size=5][b]Installation[/b][/size]
+[list=1]
+[*]Back up your save (Steam: [font=Courier New]<Steam>\userdata\<your id>\582010\remote[/font]).
+[*]Copy [font=Courier New]nativePC\plugins\MHW-FairTransmog.dll[/font] into the game's [font=Courier New]nativePC\plugins[/font] folder.
+[*]Start the game. The plugin creates [font=Courier New]MHW-FairTransmog.ini[/font] and [font=Courier New]MHW-FairTransmog.log[/font] next to itself.
+[/list]
+
+[size=5][b]Uninstalling[/b][/size]
+Delete [font=Courier New]MHW-FairTransmog.dll[/font], [font=Courier New].ini[/font] and [font=Courier New].log[/font] from [font=Courier New]nativePC\plugins[/font].
+
+Real armor chosen in the Layered Armor menu is stored in your save the same way as layered armor. Without the plugin it will most likely keep showing, but you can no longer select it again. If you want a clean layered setup first, switch those slots to regular layered pieces (or none) before uninstalling.
+
+[size=5][b]Known limitations[/b][/size]
+[list]
+[*]This is a beta, tested offline on a single character. Multiplayer is untested: other players may or may not see your look.
+[*]Mixing a full-body set with other pieces, for example through cheat mode, can leave arms or legs invisible. This is only visual.
+[/list]
+
+[size=5][b]Reporting problems[/b][/size]
+Include [font=Courier New]nativePC\plugins\MHW-FairTransmog.log[/font]. It is rewritten on every launch, so copy it right after the problem happens.
+
+[size=5][b]Credits[/b][/size]
+Built with [url=https://github.com/TsudaKageyu/minhook]MinHook[/url]. Armor data layouts follow the [url=https://github.com/Synthlight/MHW-Editor]MHW-Editor[/url] templates.

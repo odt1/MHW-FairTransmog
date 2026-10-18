@@ -1,10 +1,14 @@
-# MHW FairTransmog (beta 0.9.0)
+# MHW Fair Transmog
 
-Wear the look of real armor you own as layered armor, selectable in-game from the Layered Armor menu.
+![MHW Fair Transmog](images/banner.jpg)
+
+Wear the look of real armor you own as layered armor, selectable in-game from the Equipment Box menu.
 
 Or edit the mod's `MHW-FairTransmog.ini` directly, selecting any armor set ID for any slot that set has a piece for, with hot-reload.
 
 ## Features
+
+![Demo](images/demo.jpg)
 
 ### Fair transmog: owned armor as layered armor
 
@@ -15,7 +19,7 @@ Or edit the mod's `MHW-FairTransmog.ini` directly, selecting any armor set ID fo
 - If a piece you are wearing as layered armor leaves your equipment box (for example when you sell it), it is removed from your layered armor the next time the game refreshes your look (changing area, starting a quest, reloading, or changing layered armor). Until then the look stays.
 - Master rank armor is listed in the master rank tab, which the game shows according to its own story requirements (not yet tested on a master rank character).
 
-### Cheat mode: any armor set
+### "Cheat" mode: any armor set
 
 Off by default. `MHW-FairTransmog.ini` is created next to the plugin on first launch:
 
