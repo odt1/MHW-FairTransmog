@@ -31,4 +31,10 @@ struct PointerPatchResult {
 // Only naturally aligned slots on non-executable pages may be replaced.
 PointerPatchResult ReplacePointer(void** slot, void* expected, void* replacement) noexcept;
 
+// Points a function pointer slot at `replacement` and leaves the value it replaced in `*previous`,
+// stored before the swap makes `replacement` reachable. When another thread (another plugin hooking
+// the same slot) changes the slot between the read and the swap, it retries on the new value, so
+// both hooks end up chained. A slot holding null or `replacement` already is left alone.
+PointerPatchResult HookPointer(void** slot, void* replacement, void** previous) noexcept;
+
 }  // namespace fair_transmog::mem

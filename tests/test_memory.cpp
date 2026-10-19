@@ -143,6 +143,45 @@ void TestReplacePointer() {
     VirtualFree(page, 0, MEM_RELEASE);
 }
 
+void TestHookPointer() {
+    constexpr size_t page_size = 4096;
+    auto* page = static_cast<void**>(VirtualAlloc(nullptr, page_size, MEM_RESERVE | MEM_COMMIT, PAGE_READWRITE));
+    CHECK(page != nullptr);
+    if (page == nullptr) {
+        return;
+    }
+
+    void* const first = reinterpret_cast<void*>(static_cast<uintptr_t>(0x1111));
+    void* const second = reinterpret_cast<void*>(static_cast<uintptr_t>(0x2222));
+    void* const third = reinterpret_cast<void*>(static_cast<uintptr_t>(0x3333));
+    void* previous = nullptr;
+
+    CHECK(!fair_transmog::mem::HookPointer(page, second, &previous).installed);
+    CHECK(previous == nullptr);
+
+    page[0] = first;
+    DWORD old_protection = 0;
+    CHECK(VirtualProtect(page, page_size, PAGE_READONLY, &old_protection) != FALSE);
+    const auto installed = fair_transmog::mem::HookPointer(page, second, &previous);
+    CHECK(installed.installed);
+    CHECK(installed.protection_restored);
+    CHECK(previous == first);
+    CHECK(page[0] == second);
+
+    void* again = nullptr;
+    CHECK(!fair_transmog::mem::HookPointer(page, second, &again).installed);
+    CHECK(again == nullptr);
+    const auto chained = fair_transmog::mem::HookPointer(page, third, &again);
+    CHECK(chained.installed);
+    CHECK(again == second);
+    CHECK(page[0] == third);
+
+    auto* unaligned = reinterpret_cast<void**>(reinterpret_cast<uint8_t*>(page) + 17);
+    CHECK(!fair_transmog::mem::HookPointer(unaligned, second, &again).installed);
+
+    VirtualFree(page, 0, MEM_RELEASE);
+}
+
 }  // namespace
 
 int main() {
@@ -150,5 +189,6 @@ int main() {
     TestReadWriteAndBounds();
     TestExecutablePointerRejected();
     TestReplacePointer();
+    TestHookPointer();
     return g_failures == 0 ? 0 : 1;
 }

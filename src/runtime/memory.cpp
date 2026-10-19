@@ -134,4 +134,21 @@ PointerPatchResult ReplacePointer(void** slot, void* expected, void* replacement
     return {previous == expected, protection_restored};
 }
 
+PointerPatchResult HookPointer(void** slot, void* replacement, void** previous) noexcept {
+    constexpr int kAttempts = 16;
+    for (int attempt = 0; attempt != kAttempts; ++attempt) {
+        const auto current = Read<void*>(slot);
+        if (!current || *current == nullptr || *current == replacement) {
+            return {false, true};
+        }
+        *previous = *current;
+        const auto result = ReplacePointer(slot, *current, replacement);
+        // Not installed with the protection restored means the slot changed meanwhile.
+        if (result.installed || !result.protection_restored) {
+            return result;
+        }
+    }
+    return {false, true};
+}
+
 }  // namespace fair_transmog::mem

@@ -4,13 +4,13 @@ Player documentation is in [README.md](README.md). Reverse-engineering evidence 
 
 ## How it works
 
-The plugin is a Stracker's Loader plugin. `DllMain` starts a worker thread that opens the log, hashes the game executable on disk, and installs hooks only when the SHA-256 matches the one supported build (`src/runtime/profile.h`). Every hooked function's first bytes are checked before hooking; any mismatch installs nothing for that module. Hooks use MinHook.
+The plugin is a Stracker's Loader plugin. `DllMain` starts a worker thread that opens the log, hashes the game executable on disk, and installs hooks only when the SHA-256 matches the one supported build (`src/runtime/profile.h`). Every hooked function's first bytes are checked before hooking; any mismatch installs nothing for that module. Code hooks use MinHook; the per-frame tick is a vtable slot swap (`mem::HookPointer`).
 
 All addresses are RVAs in the unpacked image of that single build. The game no longer receives updates, so the build is pinned by hash rather than by signature scans.
 
 - `src/game/transmog.cpp`, direct override ("cheat" mode):
   - hooks the player model refresh `sub_142041700` (RVA `0x2041700`). Before the original runs for the local player, it writes the configured actor values into `player+0x13754` and remembers the game's own values for slots that are off.
-  - hooks sMhMain's per-frame update (RVA `0x1AF2B60`). Once a second it re-reads the ini; after a change it calls the refresh for the local player.
+  - hooks sTicketManager's per-frame update (`sub_141B80F30`) by swapping its vtable slot (RVA `0x3404AB0`) and calling whatever the slot held. sMhMain's update (RVA `0x1AF2B60`) calls it first on the main thread every frame. Once a second it re-reads the ini; after a change it calls the refresh for the local player. It does not patch sMhMain's update itself: MHW-DLSS4 swaps that function's vtable slot and other plugins patch its code, and two code hooks installed at the same moment can bypass each other.
   - refreshes also arrive on job threads (layered-menu selections) and on the thread that loads a character from the title screen, so slot state is guarded by a lock.
 - `src/game/layered_menu.cpp`, fair path:
   - hooks the layered list builder's catalog getter (RVA `0x16721D0`). When the builder (RVA `0x525370`) calls it, empty catalog entries are filled with copies of owned ordinary set records.

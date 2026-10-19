@@ -25,8 +25,11 @@ namespace fair_transmog::game::transmog {
 namespace {
 
 // RVAs in the unpacked image of the packed build profile::kKnownPackedExecutableSha256.
-// sMhMain's per-frame update, run by the game's main thread (re/PROTOTYPE_MILESTONE.md).
-constexpr std::uintptr_t kMainUpdateRva = 0x1AF2B60;
+// sTicketManager's per-frame update. sMhMain's update (+0x1AF2B60) calls it first, on the main
+// thread, every frame, through this vtable slot only. sMhMain's update itself is contested: MHW-DLSS4
+// swaps its vtable slot and other plugins patch its code (re/PROTOTYPE_MILESTONE.md).
+constexpr std::uintptr_t kFrameTickRva = 0x1B80F30;
+constexpr std::uintptr_t kFrameTickSlotRva = 0x3404AB0;
 // Player model refresh, (player, flag, flag); the native layered menu and area loads call it.
 constexpr std::uintptr_t kRefreshRva = 0x2041700;
 constexpr std::uintptr_t kPlayerManagerRva = 0x500ECA0;
@@ -36,12 +39,11 @@ constexpr std::array<std::uint8_t, 32> kRefreshPrologue{
     0x48, 0x89, 0x5C, 0x24, 0x08, 0x48, 0x89, 0x6C, 0x24, 0x10, 0x48, 0x89, 0x74, 0x24, 0x18, 0x48,
     0x89, 0x7C, 0x24, 0x20, 0x41, 0x56, 0x48, 0x83, 0xEC, 0x20, 0x8B, 0x81, 0x1C, 0x26, 0x01, 0x00,
 };
-// Another plugin may already have replaced these nine bytes with a jump; MinHook chains over it.
-constexpr std::array<std::uint8_t, 9> kMainUpdatePrologue{
-    0x40, 0x53, 0x48, 0x81, 0xEC, 0x80, 0x00, 0x00, 0x00,
-};
-constexpr std::ptrdiff_t kMainUpdateBodyOffset = 9;
-constexpr std::array<std::uint8_t, 4> kMainUpdateBody{0x48, 0x8B, 0xD9, 0xE8};
+// push rdi; sub rsp, 0x30. Another plugin may have patched these six bytes with a jump; the slot hook
+// does not touch the code, so only the bytes after them must match.
+constexpr std::array<std::uint8_t, 6> kFrameTickPrologue{0x40, 0x57, 0x48, 0x83, 0xEC, 0x30};
+constexpr std::ptrdiff_t kFrameTickBodyOffset = 6;
+constexpr std::array<std::uint8_t, 10> kFrameTickBody{0x48, 0x89, 0x5C, 0x24, 0x40, 0x48, 0x8B, 0xF9, 0x48, 0x89};
 
 // Player manager: 24 player records; the local one carries the manager's owner value.
 constexpr std::ptrdiff_t kManagerOwner = 0xAE40;
@@ -85,7 +87,7 @@ constexpr char kDefaultConfig[] =
     "; piece, owned or not. With SuperCheat=0 ordinary armor you do not own is removed again at the next refresh.\n"
     "SuperCheat=0\n";
 
-using MainUpdateFn = void*(__fastcall*)(void* self);
+using FrameTickFn = void*(__fastcall*)(void* self);
 using RefreshFn = void*(__fastcall*)(void* player, int flag, int flag2);
 
 struct Slot {
@@ -97,10 +99,10 @@ struct Slot {
 
 std::uint8_t* g_exe = nullptr;
 std::filesystem::path g_config_path;
-MainUpdateFn g_main_update = nullptr;
+FrameTickFn g_frame_tick = nullptr;
 RefreshFn g_refresh = nullptr;
 RefreshFn g_refresh_entry = nullptr;
-// The main update owns the config fields; refreshes also arrive from other threads (layered-menu
+// The frame tick owns the config fields; refreshes also arrive from other threads (layered-menu
 // selections run on job threads, a load from the title screen on another), so slot and player
 // state is guarded.
 SRWLOCK g_lock = SRWLOCK_INIT;
@@ -260,7 +262,7 @@ void* __fastcall RefreshDetour(void* player, int flag, int flag2) {
         const DWORD thread = GetCurrentThreadId();
         const DWORD main_thread = g_main_thread.load(std::memory_order_relaxed);
         if (thread != main_thread && !g_reported_thread.exchange(true)) {
-            SafeLog("Refresh on thread {} (main update thread {}), called from +0x{:X}; further ones not logged.",
+            SafeLog("Refresh on thread {} (main thread {}), called from +0x{:X}; further ones not logged.",
                     thread, main_thread,
                     reinterpret_cast<std::uintptr_t>(_ReturnAddress()) - reinterpret_cast<std::uintptr_t>(g_exe));
         }
@@ -273,7 +275,7 @@ void* __fastcall RefreshDetour(void* player, int flag, int flag2) {
     return g_refresh(player, flag, flag2);
 }
 
-void* __fastcall MainUpdateDetour(void* self) {
+void* __fastcall FrameTickDetour(void* self) {
     g_main_thread.store(GetCurrentThreadId(), std::memory_order_relaxed);
     const ULONGLONG now = GetTickCount64();
     if (now >= g_next_config_check) {
@@ -290,7 +292,7 @@ void* __fastcall MainUpdateDetour(void* self) {
             g_refresh_entry(player, 1, 0);
         }
     }
-    return g_main_update(self);
+    return g_frame_tick(self);
 }
 
 bool WriteDefaultConfig() {
@@ -306,15 +308,15 @@ bool Install(const std::filesystem::path& config_path) {
     g_config_path = config_path;
 
     auto* refresh = g_exe + kRefreshRva;
-    auto* main_update = g_exe + kMainUpdateRva;
+    auto* frame_tick = g_exe + kFrameTickRva;
     if (!mem::Matches(refresh, kRefreshPrologue)) {
         log::Write("Transmog: model refresh code does not match the known build; not installed.");
         return false;
     }
-    const bool main_update_hooked = mem::Read<std::uint8_t>(main_update) == std::uint8_t{0xE9};
-    if (!mem::Matches(main_update + kMainUpdateBodyOffset, kMainUpdateBody) ||
-        !(main_update_hooked || mem::Matches(main_update, kMainUpdatePrologue))) {
-        log::Write("Transmog: main update code does not match the known build; not installed.");
+    const bool frame_tick_patched = mem::Read<std::uint8_t>(frame_tick) == std::uint8_t{0xE9};
+    if (!mem::Matches(frame_tick + kFrameTickBodyOffset, kFrameTickBody) ||
+        !(frame_tick_patched || mem::Matches(frame_tick, kFrameTickPrologue))) {
+        log::Write("Transmog: frame tick code does not match the known build; not installed.");
         return false;
     }
 
@@ -330,21 +332,33 @@ bool Install(const std::filesystem::path& config_path) {
     }
     const MH_STATUS refresh_status =
         MH_CreateHook(refresh, reinterpret_cast<void*>(&RefreshDetour), reinterpret_cast<void**>(&g_refresh));
-    const MH_STATUS main_status = MH_CreateHook(main_update, reinterpret_cast<void*>(&MainUpdateDetour),
-                                                reinterpret_cast<void**>(&g_main_update));
     g_refresh_entry = reinterpret_cast<RefreshFn>(refresh);
-    const MH_STATUS enable_status =
-        refresh_status == MH_OK && main_status == MH_OK ? MH_EnableHook(MH_ALL_HOOKS) : MH_UNKNOWN;
+    const MH_STATUS enable_status = refresh_status == MH_OK ? MH_EnableHook(MH_ALL_HOOKS) : MH_UNKNOWN;
     if (enable_status != MH_OK) {
-        log::Log("Transmog: hooks failed (refresh {}, main update {}, enable {}); not installed.",
-                 MH_StatusToString(refresh_status), MH_StatusToString(main_status),
+        log::Log("Transmog: hooks failed (refresh {}, enable {}); not installed.", MH_StatusToString(refresh_status),
                  MH_StatusToString(enable_status));
         MH_Uninitialize();
         return false;
     }
-    log::Log("Transmog: direct override hooks installed (main update +0x{:X}{}, refresh +0x{:X}); "
+    // A vtable slot swap chains with code hooks in any order and with other slot hooks, including
+    // one installed at the same moment. The detour can run as soon as the slot points at it, so the
+    // function it calls is stored first.
+    const auto patch = mem::HookPointer(reinterpret_cast<void**>(g_exe + kFrameTickSlotRva),
+                                        reinterpret_cast<void*>(&FrameTickDetour),
+                                        reinterpret_cast<void**>(&g_frame_tick));
+    if (!patch.installed) {
+        log::Write("Transmog: could not hook the frame tick vtable slot; not installed.");
+        MH_DisableHook(MH_ALL_HOOKS);
+        MH_Uninitialize();
+        return false;
+    }
+    if (!patch.protection_restored) {
+        log::Write("Transmog: the frame tick vtable page kept write access after the hook.");
+    }
+    const bool chained = reinterpret_cast<std::uint8_t*>(g_frame_tick) != frame_tick;
+    log::Log("Transmog: direct override hooks installed (frame tick slot +0x{:X}{}, refresh +0x{:X}); "
              "saved layered IDs are never written.",
-             kMainUpdateRva, main_update_hooked ? " over an existing jump" : "", kRefreshRva);
+             kFrameTickSlotRva, chained ? ", chained after another plugin's hook" : "", kRefreshRva);
     return true;
 }
 
