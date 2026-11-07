@@ -161,3 +161,7 @@ Re-verified in Binary Ninja 5.2 on the unpacked image (`FE50D846…C521`, DB `Mo
 ### Fix (0.9.3)
 
 MinHook on `sub_14134F7A0` and `sub_1405DC320`; each detour answers true only when `_ReturnAddress()` is the builder's own call site (`0x5253A6`, `0x5253FA`) and SuperCheat is on. Every other caller, and every call with SuperCheat off, reaches the original. **Unknown:** whether the tab strip shows the third tab, and whether a category-2 copy listed in slot 2 is reachable from the UI.
+
+### Live result (2026-11-08)
+
+- **Observed, user-confirmed, TEST:** with `SuperCheat=1` on a character without master rank progress, the Master Rank tab opens and lists the sets, and selection works ("Works proper"). The two gate detours and the category-2 clamp are confirmed in game. Released as 0.9.3.
