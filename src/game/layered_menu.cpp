@@ -385,10 +385,12 @@ void CollectFairSets() {
         if (!mem::Read(record, copy.data(), kSetStride)) {
             continue;
         }
-        // Tab 0 holds low/high rank layered sets, tab 1 master rank ones; the builder has no third tab.
+        // The category is the tab index: the builder sizes its arrays as category * 0xBC8 and keeps
+        // three slots (+0x3550, +0x4118, +0x4CE0). The menu presents two tabs, so a third-category
+        // set is listed in the master rank tab instead of an unreachable third one.
         std::uint32_t category = 0;
         std::memcpy(&category, copy.data() + kSetCategory, sizeof(category));
-        category = category == 0 ? 0 : 1;
+        category = category >= 2 ? 1 : category;
         std::memcpy(copy.data() + kSetCategory, &category, sizeof(category));
         g_fair_sets.push_back(copy);
     }
