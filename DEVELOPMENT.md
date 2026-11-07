@@ -1,6 +1,6 @@
 # MHW FairTransmog: development
 
-Player documentation is in [README.md](README.md). Reverse-engineering evidence lives under `re/`: [re/PROTOTYPE_MILESTONE.md](re/PROTOTYPE_MILESTONE.md) has the live results and addresses this beta is built on, [re/FINDINGS.md](re/FINDINGS.md) the evidence-tagged claims, and [IMPLEMENTATION_PLAN.md](IMPLEMENTATION_PLAN.md) the original plan and user decisions.
+Player documentation is in [README.md](README.md). Reverse-engineering evidence lives under `re/`: [re/PROTOTYPE_MILESTONE.md](re/PROTOTYPE_MILESTONE.md) has the live results and addresses this build is built on, [re/FINDINGS.md](re/FINDINGS.md) the evidence-tagged claims, and [IMPLEMENTATION_PLAN.md](IMPLEMENTATION_PLAN.md) the original plan and user decisions.
 
 ## How it works
 
@@ -44,7 +44,7 @@ To include the current-asset fingerprint test, set `$env:MHW_ARMOR_ASSET` to the
 
 - `tools/backup-save.ps1 -SaveRoot '<Steam>\userdata\<id>\582010'` copies and verifies the whole save folder (game closed) into `re/backups/`.
 - `tools/deploy.ps1 -BuildDir build\release` refuses while the game runs, backs up the installed DLL and PDB into `re/deployment-backups/`, copies and verifies the new ones.
-- `tools/package.ps1` builds `dist/MHW-FairTransmog-<version>-beta.zip` (DLL in `nativePC\plugins`, README, ARMOR_IDS, notices).
+- `tools/package.ps1` builds `dist/MHW-FairTransmog-<version>.zip` (DLL in `nativePC\plugins`, README, ARMOR_IDS, notices).
 - `python -I -B tools/armor_ids.py` regenerates [ARMOR_IDS.md](ARMOR_IDS.md) from the extracted `armor.am_dat`, `armor_series_eng.gmd`, `armor_eng.gmd`, and `re/observations/set-metadata.json` (sets with pieces in the running game, from `tools/live/dump_set_metadata.js`).
 
 Do not hot-unload the plugin; close the game to replace it. Live tests use the offline TEST character (save slot 3) only.

@@ -70,7 +70,7 @@ Real armor chosen in the Layered Armor menu is stored in your save the same way 
 
 ## Known limitations
 
-- This is a beta, tested offline on a single character. Multiplayer is untested: other players may or may not see your look.
+- Tested offline on a single character. Multiplayer is untested: other players may or may not see your look.
 - Mixing a full-body set with other pieces, for example through cheat mode, can leave arms or legs invisible. This is only visual.
 
 ## Reporting problems
