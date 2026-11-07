@@ -47,11 +47,25 @@ constexpr std::uintptr_t kBuilderEnd = 0x5256AB;
 constexpr std::uintptr_t kMenuBegin = 0x523A50;
 constexpr std::uintptr_t kMenuEnd = 0x5266AF;
 
+// The builder's two master rank gates (call sites 0x5253A1 and 0x5253F5, return addresses below).
+// The first is `threshold <= user+0x102424` (story progress); the second reads a global byte flag
+// at *(0x144CD2AC0)+0x38. Both are consulted only for sets whose category is 1 or higher.
+constexpr std::uintptr_t kProgressGateRva = 0x134F7A0;
+constexpr std::uintptr_t kSecondGateRva = 0x5DC320;
+constexpr std::uintptr_t kProgressGateCaller = 0x5253A6;
+constexpr std::uintptr_t kSecondGateCaller = 0x5253FA;
+
 constexpr std::array<std::uint8_t, 17> kCatalogAtPrologue{
     0x8B, 0xD1, 0x48, 0x8B, 0x0D, 0x27, 0xFD, 0x99, 0x03, 0x48, 0x81, 0xC1, 0xE8, 0x27, 0x01, 0x00, 0xE9,
 };
 constexpr std::array<std::uint8_t, 19> kSetTypePrologue{
     0x33, 0xC0, 0x48, 0x83, 0xC1, 0x18, 0x48, 0x8B, 0x11, 0x48, 0x85, 0xD2, 0x74, 0x0A, 0x44, 0x0F, 0xB6, 0x42, 0x13,
+};
+constexpr std::array<std::uint8_t, 15> kProgressGatePrologue{
+    0x48, 0x89, 0x5C, 0x24, 0x08, 0x57, 0x48, 0x83, 0xEC, 0x20, 0x8B, 0xDA, 0x48, 0x8B, 0xF9,
+};
+constexpr std::array<std::uint8_t, 16> kSecondGatePrologue{
+    0x48, 0x89, 0x5C, 0x24, 0x08, 0x57, 0x48, 0x83, 0xEC, 0x20, 0x48, 0x63, 0xDA, 0x48, 0x8B, 0xF9,
 };
 constexpr std::array<std::uint8_t, 23> kAvailablePrologue{
     0x48, 0x89, 0x5C, 0x24, 0x08, 0x48, 0x89, 0x7C, 0x24, 0x18, 0x55, 0x48,
@@ -99,6 +113,7 @@ using Ownership = std::array<std::bitset<kRowKeys>, kSlots>;
 using CatalogAtFn = void*(__fastcall*)(int index);
 using SetTypeFn = std::uint64_t(__fastcall*)(const void* record);
 using AvailableFn = std::uint64_t(__fastcall*)(void* user, int set, int slot);
+using GateFn = std::uint8_t(__fastcall*)(void* self, int value);
 
 // The record holds pointers, so the copy keeps their 8-byte alignment.
 struct SetCopy {
@@ -119,6 +134,8 @@ std::atomic<bool> g_super{false};
 CatalogAtFn g_catalog_at = nullptr;
 SetTypeFn g_set_type = nullptr;
 AvailableFn g_available = nullptr;
+GateFn g_progress_gate = nullptr;
+GateFn g_second_gate = nullptr;
 // Ownership snapshot taken by the list builder (main thread); menu selections read it on job
 // threads. OnRefresh takes its own snapshot instead.
 SRWLOCK g_owned_lock = SRWLOCK_INIT;
@@ -270,6 +287,28 @@ void RefreshSuperFlag() noexcept {
     } catch (...) {
         // Keep the previous value.
     }
+}
+
+// SuperCheat opens the master rank tab on characters without the story progress for it. The answer
+// is forced only for the builder's own calls; every other caller sees the original result.
+std::uint8_t __fastcall ProgressGateDetour(void* self, int value) {
+    // The builder calls this once per list build, so the ini is re-read here rather than on the
+    // many other call sites that share this function.
+    if (CalledFrom(_ReturnAddress(), kProgressGateCaller, kProgressGateCaller + 1)) {
+        RefreshSuperFlag();
+        if (g_super.load(std::memory_order_relaxed)) {
+            return 1;
+        }
+    }
+    return g_progress_gate(self, value);
+}
+
+std::uint8_t __fastcall SecondGateDetour(void* self, int value) {
+    if (g_super.load(std::memory_order_relaxed) &&
+        CalledFrom(_ReturnAddress(), kSecondGateCaller, kSecondGateCaller + 1)) {
+        return 1;
+    }
+    return g_second_gate(self, value);
 }
 
 bool OwnsAny(const Ownership& owned, const std::uint8_t* record) noexcept {
@@ -458,8 +497,11 @@ bool Install(const std::filesystem::path& config_path) {
     auto* catalog_at = g_exe + kCatalogAtRva;
     auto* set_type = g_exe + kSetTypeRva;
     auto* available = g_exe + kAvailableRva;
+    auto* progress_gate = g_exe + kProgressGateRva;
+    auto* second_gate = g_exe + kSecondGateRva;
     if (!mem::Matches(catalog_at, kCatalogAtPrologue) || !mem::Matches(set_type, kSetTypePrologue) ||
-        !mem::Matches(available, kAvailablePrologue)) {
+        !mem::Matches(available, kAvailablePrologue) || !mem::Matches(progress_gate, kProgressGatePrologue) ||
+        !mem::Matches(second_gate, kSecondGatePrologue)) {
         log::Write("Layered menu: code does not match the known build; owned armor not offered.");
         return false;
     }
@@ -469,10 +511,12 @@ bool Install(const std::filesystem::path& config_path) {
         log::Write("Layered menu: MinHook initialization failed; owned armor not offered.");
         return false;
     }
-    const std::array<std::pair<void*, std::pair<void*, void**>>, 3> hooks{{
+    const std::array<std::pair<void*, std::pair<void*, void**>>, 5> hooks{{
         {catalog_at, {reinterpret_cast<void*>(&CatalogAtDetour), reinterpret_cast<void**>(&g_catalog_at)}},
         {set_type, {reinterpret_cast<void*>(&SetTypeDetour), reinterpret_cast<void**>(&g_set_type)}},
         {available, {reinterpret_cast<void*>(&AvailableDetour), reinterpret_cast<void**>(&g_available)}},
+        {progress_gate, {reinterpret_cast<void*>(&ProgressGateDetour), reinterpret_cast<void**>(&g_progress_gate)}},
+        {second_gate, {reinterpret_cast<void*>(&SecondGateDetour), reinterpret_cast<void**>(&g_second_gate)}},
     }};
     std::size_t created = 0;
     MH_STATUS status = MH_OK;

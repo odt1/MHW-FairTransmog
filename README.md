@@ -47,7 +47,7 @@ Off by default. Add `SuperCheat=1` under `[Transmog]` in `MHW-FairTransmog.ini`:
 
 - Every armor set (and every piece of it that exists) shows up in **Equipment Box → Layered Armor Settings**, so you can preview and select any of them with the game's own menu, owned or not. Layered sets you have not unlocked are available too.
 - Reopen the menu after changing the setting; no restart needed.
-- Sets are listed in the same two tabs as other layered armor, so the master rank tab (where most sets live) shows only when the game itself shows it, after the story progress it requires.
+- Sets are listed in the same two tabs as other layered armor. SuperCheat also opens the master rank tab on a character that has not reached that story progress yet; without SuperCheat the game's own requirement still applies.
 - Selecting an unowned piece stores it in your save like any layered armor. With `SuperCheat=0` the plugin removes unowned ordinary armor again the next time the game refreshes your look. Unlocked-by-SuperCheat layered sets stay until you change them.
 
 ## Requirements
